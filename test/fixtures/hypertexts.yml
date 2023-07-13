@@ -1,0 +1,15 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  url: MyString
+  name: MyString
+  scrape_interval: 1
+  time_last_scrape: 2023-07-12 14:08:40
+  time_initial_scrape: 2023-07-12 14:08:40
+
+two:
+  url: MyString
+  name: MyString
+  scrape_interval: 1
+  time_last_scrape: 2023-07-12 14:08:40
+  time_initial_scrape: 2023-07-12 14:08:40

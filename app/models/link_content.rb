@@ -1,0 +1,2 @@
+class LinkContent < ApplicationRecord
+end

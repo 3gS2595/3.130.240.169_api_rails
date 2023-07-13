@@ -1,0 +1,22 @@
+development:
+  adapter: postgresql
+  port: 5432
+  # these are our new parameters
+  encoding: UTF-8
+  database: crystal_hair_api_rails_development
+  host: /var/run/postgresql
+
+
+test:
+  # this won't work 
+  adapter: postgresql
+  encoding: unicode
+  database: crystal_hair_api_rails_test
+  pool: 5
+
+production:
+  # this won't work 
+  adapter: postgresql
+  encoding: unicode
+  database: crystal_hair_api_rails_prod
+  pool: 5

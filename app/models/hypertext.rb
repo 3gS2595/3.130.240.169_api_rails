@@ -1,0 +1,2 @@
+class Hypertext < ApplicationRecord
+end
