@@ -46,6 +46,6 @@ class LinkContentsController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def link_content_params
-      params.require(:link_content).permit(:source_url_id, :names, :url, :word_count, :author, :text_body)
+      params.require(:link_content).permit(:post_date, :source_url_id, :names, :url, :word_count, :author, :text_body)
     end
 end

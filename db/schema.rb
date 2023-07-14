@@ -50,6 +50,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_12_201422) do
     t.uuid "source_url_id"
     t.string "names"
     t.string "url"
+    t.datetime "post_date"
     t.integer "word_count"
     t.string "author"
     t.string "text_body"
