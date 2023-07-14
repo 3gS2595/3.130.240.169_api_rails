@@ -28,6 +28,8 @@ gem "puma", "~> 5.0"
 gem "tzinfo-data", platforms: %i[ mingw mswin x64_mingw jruby ]
 gem "rack-cors"
 gem "nokogiri"
+gem 'aws-sdk-s3'
+gem 'devise'
 # Reduces boot times through caching; required in config/boot.rb
 gem "bootsnap", require: false
 
@@ -47,3 +49,5 @@ group :development do
   # gem "spring"
 end
 
+
+gem "devise-jwt", "~> 0.11.0"
