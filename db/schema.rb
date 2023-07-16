@@ -50,6 +50,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_14_165402) do
     t.integer "scrape_interval"
     t.datetime "time_last_scrape"
     t.datetime "time_initial_scrape"
+    t.string "logo_path"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end

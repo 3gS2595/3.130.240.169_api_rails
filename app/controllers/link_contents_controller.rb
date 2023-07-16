@@ -1,4 +1,6 @@
 class LinkContentsController < ApplicationController
+
+  before_action :authenticate_user!
   before_action :set_link_content, only: %i[ show update destroy ]
 
   # GET /link_contents

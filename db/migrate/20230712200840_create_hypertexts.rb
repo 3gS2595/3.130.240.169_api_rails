@@ -7,7 +7,7 @@ class CreateHypertexts < ActiveRecord::Migration[7.0]
       t.integer :scrape_interval
       t.datetime :time_last_scrape
       t.datetime :time_initial_scrape
-      
+      t.string :logo_path 
       t.timestamps
     end
   end

@@ -30,6 +30,10 @@ gem "rack-cors"
 gem "nokogiri"
 gem 'aws-sdk-s3'
 gem 'devise'
+gem 'mechanize'
+gem 'open-uri'
+gem 'kimurai'
+gem 'tanakai'
 # Reduces boot times through caching; required in config/boot.rb
 gem "bootsnap", require: false
 

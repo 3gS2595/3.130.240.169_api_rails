@@ -1,11 +1,10 @@
 class KernalsController < ApplicationController
+  before_action :authenticate_user!
   before_action :set_kernal, only: %i[ show update destroy ]
 
   # GET /kernals
   def index
-    @kernals = Kernal.all
-
-    render json: @kernals
+    render json: Kernal.all 
   end
 
   # GET /kernals/1
