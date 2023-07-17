@@ -4,6 +4,7 @@ require './config/environment/'
 require "down"
 require "fileutils"
 
+
 class GithubSpider < Tanakai::Base
   @name = "github_spider"
   @engine = :selenium_firefox
@@ -25,39 +26,34 @@ class GithubSpider < Tanakai::Base
   @url ="" 
 
   if SourceUrl.exists?(domain: "https://www.tumblr.com")
-    print('exists\n')
-  print("\n")
+    puts('exists\n')
   else
-    print('does not exist')
-  print("\n")
-  @link = SourceUrl.create(domain:  "https://www.tumblr.com", logo_path: "tumblr_ea6fbf7e15920a6a0a9ee405a2d5e18c_8406c2fd_96.jpg")
+    puts('does not exist')
+    @link = SourceUrl.create(domain: "https://www.tumblr.com", logo_path: "tumblr_ea6fbf7e15920a6a0a9ee405a2d5e18c_8406c2fd_96.jpg")
   end
 
   if Hypertext.exists?(url: "https://7twdi29ot5y8og6ndze7m7wexn29cm24.tumblr.com")
-    print('exists\n')
-  print("\n")
+    puts('exists\n')
   else
-    print('does not exist')
-  print("\n")
+    puts('does not exist')
+    @source_url_id = SourceUrl.find_by!(domain: "https://www.tumblr.com").id
     @link = Hypertext.create(url:  "https://7twdi29ot5y8og6ndze7m7wexn29cm24.tumblr.com", name: "7twdi29ot5y8og6ndze7m7wexn29cm24", source_url_id: @source_url_id)
   end
 
-  @hypertext_idN = Hypertext.find_by!(url: "https://7twdi29ot5y8og6ndze7m7wexn29cm24.tumblr.com").id
-  print("hypertext_id= " + @hypertext_idN)
-  print("\n")
-  @source_url_idN = SourceUrl.find_by!(domain:  "https://www.tumblr.com").id
-  print("source_url_id= " + @source_url_idN)
-  print("\n")
+  @hypertext_id = Hypertext.find_by!(url: "https://7twdi29ot5y8og6ndze7m7wexn29cm24.tumblr.com").id
+  @source_url_id = SourceUrl.find_by!(domain: "https://www.tumblr.com").id
+  puts("source_url_id= " + @source_url_id)
   
-    def parse(response, url:, data: {})
+  puts()
+  puts("fnlakjwerhlkjh34!!")
+  @start_urls = Hypertext.where(:source_url_id => @source_url_id).map{|x| x.url}
+  def parse(response, url:, data: {})
     response.css("url").each do |a|
-      request_to :parse_repo_page, url: absolute_url(a.css("loc").text, base: url)
+      # request_to :parse_repo_page, url: absolute_url(a.css("loc").text, base: url)
       @time_posted = a.css('lastmod').text.sub! '+00:00', '0Z'
       @url = a.css('loc').text
-      print("time_posted= " + @time_posted)
-      print("\n")
-      print("urlN= " + @url)
-      print("\n")
+      puts("time_posted= " + @time_posted)
+      puts("urlN= " + @url)
     end
   end
 
@@ -73,31 +69,26 @@ class GithubSpider < Tanakai::Base
     end
     descr = response.xpath("//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[2]/p")
     if !descr.empty?
-      print(descr.text)
+      puts(descr.text)
       @descri = descr.text
-      print("\n")
     end
     tags = response.xpath("/html/body/div[1]/div/div[2]/div[2]/div/div/div/main/div/div/div/div[2]/div/div/div/article/div[2]/div/div/a")
     if !tags.empty?
-      print(tags.text)
+      puts(tags.text)
       @hashtags = tags.text
-      print("\n")
     end
     auth = response.xpath("/html/body/div/div/div[2]/div[2]/div/div/div/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[1]/div[1]/div[2]/div/div/span/span/span/a/div")
     if !auth.empty?
-      print(auth.text)
+      puts(auth.text)
       @author = tags.text
-      print("\n")
     else
       @author = "7twdi29ot5y8og6ndze7m7wexn29cm24"
     end
 
     if Kernal.exists?(file_path: @imgPath)
-      print('KERNAL EXISTS\n')
-      print("\n")
+      puts('KERNAL EXISTS\n')
     else
-      print('KERNAL DOES NOT EXIST')
-      print("\n")
+      puts('KERNAL DOES NOT EXIST')
       @link = Kernal.create(source_url_id:@source_url_id, hypertext_id:@hypertext_id, file_path:@imgPath, file_name:@imgPath, description:@descri, hashtags:@hashtags, author:@author, time_posted:@time_posted, url:@url)
     end
 
