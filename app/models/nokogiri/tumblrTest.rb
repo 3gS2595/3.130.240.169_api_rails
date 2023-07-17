@@ -1,13 +1,12 @@
-# github_spider.rb
 require 'tanakai'
 require './config/environment/'
-require "down"
-require "fileutils"
+require 'down'
+require 'fileutils'
 
-class GithubSpider < Tanakai::Base
+class IthubSpider < Tanakai::Base
   @name = "github_spider"
   @engine = :selenium_firefox
-  @start_urls = ["https://7twdi29ot5y8og6ndze7m7wexn29cm24.tumblr.com/sitemap1.xml"]
+  @start_urls = ["https://crisprbaby.tumblr.com/sitemap1.xml"]
   @config = {
     user_agent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.84 Safari/537.36",
     before_request: { delay: 1..6 }
@@ -24,28 +23,28 @@ class GithubSpider < Tanakai::Base
   @imgPath = ""
   @url ="" 
 
-  if SourceUrl.exists?(domain: "https://www.tumblr.com")
+  if SourceUrl.exists?(domain: "https://crisprbaby.tumblr.com/")
     print('exists\n')
   print("\n")
   else
     print('does not exist')
   print("\n")
-  @link = SourceUrl.create(domain:  "https://www.tumblr.com", logo_path: "tumblr_ea6fbf7e15920a6a0a9ee405a2d5e18c_8406c2fd_96.jpg")
+  @link = SourceUrl.create(domain:  "https://crisprbaby.tumblr.com/", logo_path: "asdfghj.jpg")
   end
 
-  if Hypertext.exists?(url: "https://7twdi29ot5y8og6ndze7m7wexn29cm24.tumblr.com")
+  if Hypertext.exists?(url: "https://crisprbaby.tumblr.com/")
     print('exists\n')
   print("\n")
   else
     print('does not exist')
   print("\n")
-    @link = Hypertext.create(url:  "https://7twdi29ot5y8og6ndze7m7wexn29cm24.tumblr.com", name: "7twdi29ot5y8og6ndze7m7wexn29cm24", source_url_id: @source_url_id)
+    @link = Hypertext.create(url:  "https://crisprbaby.tumblr.com/", name: "crisprbaby", source_url_id: @source_url_id)
   end
 
-  @hypertext_idN = Hypertext.find_by!(url: "https://7twdi29ot5y8og6ndze7m7wexn29cm24.tumblr.com").id
+  @hypertext_idN = Hypertext.find_by!(url: "https://crisprbaby.tumblr.com/").id
   print("hypertext_id= " + @hypertext_idN)
   print("\n")
-  @source_url_idN = SourceUrl.find_by!(domain:  "https://www.tumblr.com").id
+  @source_url_idN = SourceUrl.find_by!(domain:  "https://crisprbaby.tumblr.com/").id
   print("source_url_id= " + @source_url_idN)
   print("\n")
   
@@ -89,7 +88,7 @@ class GithubSpider < Tanakai::Base
       @author = tags.text
       print("\n")
     else
-      @author = "7twdi29ot5y8og6ndze7m7wexn29cm24"
+      @author = "crisprbaby"
     end
 
     if Kernal.exists?(file_path: @imgPath)
@@ -104,4 +103,4 @@ class GithubSpider < Tanakai::Base
   end
 end
 
-GithubSpider.crawl!
+IthubSpider.crawl!

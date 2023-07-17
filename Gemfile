@@ -34,6 +34,10 @@ gem 'mechanize'
 gem 'open-uri'
 gem 'kimurai'
 gem 'tanakai'
+gem 'down'
+gem 'fileutils'
+
+
 # Reduces boot times through caching; required in config/boot.rb
 gem "bootsnap", require: false
 
