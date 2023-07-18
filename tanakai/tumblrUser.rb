@@ -1,14 +1,13 @@
-# github_spider.rb
+# tumblr_spider.rb
 require 'tanakai'
 require './config/environment/'
 require "down"
 require "fileutils"
 
 
-class GithubSpider < Tanakai::Base
-  @name = "github_spider"
+class TumblrSpider < Tanakai::Base
+  @name = "tumblr_spider"
   @engine = :selenium_firefox
-  @start_urls = ["https://7twdi29ot5y8og6ndze7m7wexn29cm24.tumblr.com/sitemap1.xml"]
   @config = {
     user_agent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.84 Safari/537.36",
     before_request: { delay: 1..6 }
@@ -25,74 +24,95 @@ class GithubSpider < Tanakai::Base
   @imgPath = ""
   @url ="" 
 
-  if SourceUrl.exists?(domain: "https://www.tumblr.com")
-    puts('exists\n')
-  else
-    puts('does not exist')
-    @link = SourceUrl.create(domain: "https://www.tumblr.com", logo_path: "tumblr_ea6fbf7e15920a6a0a9ee405a2d5e18c_8406c2fd_96.jpg")
+  @contentSavePath = "/home/pin/crystal_hair/crystal_hair_ui_vueCL/public/feed/"
+  @imageXpath = "/html/body/div/div/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div/button/span/figure/div/img"
+  @imageReblogXpath = "/html/body/div[1]/div/div[2]/div[2]/div[2]/div/div/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[2]/div/div[1]/div/button/span/figure/div/img"
+  @descrXpath = "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[2]/p"
+  @tagsXpath = "/html/body/div[1]/div/div[2]/div[2]/div/div/div/main/div/div/div/div[2]/div/div/div/article/div[2]/div/div/a"
+  @reblogAuthXpath = "/html/body/div[1]/div/div[2]/div[2]/div/div/div/main/div/div/div/div[2]/div[1]/div/div/article/div[1]/div/span/div/div[1]/div[1]/div[2]/div/div/span/span/span/a/div"
+  @postAuthXpath = "/html/body/div/div/div[2]/div[2]/div/div/div/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[1]/div[1]/div[2]/div/div/span/span/span/a/div"
+
+  if !SourceUrl.exists?(domain: "https://www.tumblr.com")
+    @link = SourceUrl.create(domain: "https://www.tumblr.com", logo_path: "tumblr.jpg")
   end
 
-  if Hypertext.exists?(url: "https://7twdi29ot5y8og6ndze7m7wexn29cm24.tumblr.com")
-    puts('exists\n')
-  else
-    puts('does not exist')
-    @source_url_id = SourceUrl.find_by!(domain: "https://www.tumblr.com").id
-    @link = Hypertext.create(url:  "https://7twdi29ot5y8og6ndze7m7wexn29cm24.tumblr.com", name: "7twdi29ot5y8og6ndze7m7wexn29cm24", source_url_id: @source_url_id)
-  end
-
-  @hypertext_id = Hypertext.find_by!(url: "https://7twdi29ot5y8og6ndze7m7wexn29cm24.tumblr.com").id
   @source_url_id = SourceUrl.find_by!(domain: "https://www.tumblr.com").id
-  puts("source_url_id= " + @source_url_id)
+  @start_urls = Hypertext.where(:source_url_id => @source_url_id).map{|x| (x.url + "/sitemap1.xml")}
   
-  puts()
-  puts("fnlakjwerhlkjh34!!")
-  @start_urls = Hypertext.where(:source_url_id => @source_url_id).map{|x| x.url}
   def parse(response, url:, data: {})
+    @account = Hypertext.find_by!(url:  url = (url.sub! '/sitemap1.xml', ''))
+    @source_url_id = @account.source_url_id
+    @hypertext_id = @account.id
+    @author = @account.name
+
     response.css("url").each do |a|
-      # request_to :parse_repo_page, url: absolute_url(a.css("loc").text, base: url)
-      @time_posted = a.css('lastmod').text.sub! '+00:00', '0Z'
       @url = a.css('loc').text
-      puts("time_posted= " + @time_posted)
-      puts("urlN= " + @url)
+      if Kernal.exists?(url:a.css('loc').text)
+        puts('KERN111AL EXISTS')
+      else
+        request_to :parse_repo_page, url: absolute_url(a.css("loc").text, base: url)
+        @time_posted = a.css('lastmod').text.sub! '+00:00', '0Z'
+      end
     end
   end
 
   def parse_repo_page(response, url:, data: {})
-    test = response.xpath("//*[@id='base-container']/div[2]/div[2]/div/div/div/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div/button/span/figure/div/img")
-    if test.attr('srcset')
-      tempfile = Down.download(test.attr('srcset').text.scan(/\bhttps?:\/\/[^\s]+\.(?:jpg|gif|png|pnj|gifv)\b/).last)
+    imgHtml = response.xpath(@imageXpath)
+    if imgHtml.attr('srcset')
+      tempfile = Down.download(imgHtml.attr('srcset').text.scan(/\bhttps?:\/\/[^\s]+\.(?:jpg|gif|png|pnj|gifv)\b/).last)
       @imgPath = tempfile.original_filename
-      FileUtils.mv(tempfile.path, "/home/pin/crystal_hair/crystal_hair_ui_vueCL/public/feed/#{tempfile.original_filename}")
-
-      #create new kernal 
-
+      FileUtils.mv(tempfile.path, (@contentSavePath + "#{tempfile.original_filename}"))
+    else
+      imgHtml = response.xpath(@imageReblogXpath)
+      if imgHtml.attr('srcset')
+        tempfile = Down.download(imgHtml.attr('srcset').text.scan(/\bhttps?:\/\/[^\s]+\.(?:jpg|gif|png|pnj|gifv)\b/).last)
+        @imgPath = tempfile.original_filename
+        FileUtils.mv(tempfile.path, (@contentSavePath + "#{tempfile.original_filename}"))
+      end
     end
-    descr = response.xpath("//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[2]/p")
+
+    descr = response.xpath(@descrXpath)
     if !descr.empty?
       puts(descr.text)
       @descri = descr.text
     end
-    tags = response.xpath("/html/body/div[1]/div/div[2]/div[2]/div/div/div/main/div/div/div/div[2]/div/div/div/article/div[2]/div/div/a")
+
+    tags = response.xpath(@tagsXpath)
     if !tags.empty?
       puts(tags.text)
       @hashtags = tags.text
     end
-    auth = response.xpath("/html/body/div/div/div[2]/div[2]/div/div/div/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[1]/div[1]/div[2]/div/div/span/span/span/a/div")
+
+    auth = response.xpath(@reblogAuthXpath)
     if !auth.empty?
       puts(auth.text)
+      puts("REBLOG")
       @author = tags.text
     else
-      @author = "7twdi29ot5y8og6ndze7m7wexn29cm24"
+      auth = response.xpath()
+      if !auth.empty?
+        puts(auth.text)
+        @author = tags.text
+      end
     end
 
     if Kernal.exists?(file_path: @imgPath)
-      puts('KERNAL EXISTS\n')
+      puts('KERNALy EXISTS')
     else
       puts('KERNAL DOES NOT EXIST')
-      @link = Kernal.create(source_url_id:@source_url_id, hypertext_id:@hypertext_id, file_path:@imgPath, file_name:@imgPath, description:@descri, hashtags:@hashtags, author:@author, time_posted:@time_posted, url:@url)
+      @link = Kernal.create(
+        source_url_id:@source_url_id, 
+        hypertext_id:@hypertext_id, 
+        file_path:@imgPath, 
+        file_name:@imgPath, 
+        description:@descri, 
+        hashtags:@hashtags, 
+        author:@author, 
+        time_posted:@time_posted, 
+        url:@url
+      )
     end
-
   end
 end
 
-GithubSpider.crawl!
+TumblrSpider.crawl!
