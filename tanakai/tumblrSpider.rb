@@ -51,61 +51,44 @@ class TumblrSpider < Tanakai::Base
     # size standard
     if response.xpath("//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[1]/button/span/figure/div/img").attr('srcset')
       imgHtml = response.xpath("//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[1]/button/span/figure/div/img")
-
-      tempfile = Down.download(imgHtml.attr('srcset').text.scan(/\bhttps?:\/\/[^\s]+\.(?:jpg|gif|png|pnj|gifv)\b/).last)
-      @imgPath = tempfile.original_filename
-      FileUtils.mv(tempfile.path, "/home/pin/crystal_hair/crystal_hair_ui_vueCL/public/feed/#{tempfile.original_filename}")
-
     # size tiny
     elsif response.xpath("//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div/figure/div/img").attr('srcset')
       imgHtml = response.xpath("//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div/figure/div/img")
-
-      tempfile = Down.download(imgHtml.attr('srcset').text.scan(/\bhttps?:\/\/[^\s]+\.(?:jpg|gif|png|pnj|gifv)\b/).last)
-      @imgPath = tempfile.original_filename
-      FileUtils.mv(tempfile.path, "/home/pin/crystal_hair/crystal_hair_ui_vueCL/public/feed/#{tempfile.original_filename}")
-
     # size tiny? rebglog
     elsif response.xpath("//*[@id='base-container']/div[2]/div[2]/div/div/div/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[2]/div/div[1]/div/button/span/figure/div/img").attr('srcset')
       imgHtml = response.xpath("//*[@id='base-container']/div[2]/div[2]/div/div/div/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[2]/div/div[1]/div/button/span/figure/div/img")
-
-      tempfile = Down.download(imgHtml.attr('srcset').text.scan(/\bhttps?:\/\/[^\s]+\.(?:jpg|gif|png|pnj|gifv)\b/).last)
-      @imgPath = tempfile.original_filename
-      FileUtils.mv(tempfile.path, "/home/pin/crystal_hair/crystal_hair_ui_vueCL/public/feed/#{tempfile.original_filename}")
+    # size medium ?
     elsif response.xpath("//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[2]/div/div[1]/button/span/figure/div/img").attr('srcset')
       imgHtml = response.xpath("//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[2]/div/div[1]/button/span/figure/div/img")
-
+    end
+    
+    if imgHtml.attr('srcset')
       tempfile = Down.download(imgHtml.attr('srcset').text.scan(/\bhttps?:\/\/[^\s]+\.(?:jpg|gif|png|pnj|gifv)\b/).last)
       @imgPath = tempfile.original_filename
       FileUtils.mv(tempfile.path, "/home/pin/crystal_hair/crystal_hair_ui_vueCL/public/feed/#{tempfile.original_filename}")
     end
 
-
     descr = response.xpath("//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[2]/p")
     if !descr.empty?
-      puts(descr.text)
       @descri = descr.text
     end
 
     tags = response.xpath("/html/body/div[1]/div/div[2]/div[2]/div/div/div/main/div/div/div/div[2]/div/div/div/article/div[2]/div/div/a")
     if !tags.empty?
-      puts(tags.text)
       @hashtags = tags.text
     end
 
     auth = response.xpath("/html/body/div/div/div[2]/div[2]/div/div/div/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[1]/div[1]/div[2]/div/div/span/span/span/a/div")
     if !auth.empty?
-      puts(auth.text)
-      puts("REBLOG")
       @author = tags.text
     else
       auth = response.xpath()
       if !auth.empty?
-        puts(auth.text)
         @author = tags.text
       end
     end
     if Kernal.exists?(file_path: @imgPath)
-      puts('KERNAL EXISTS\n')
+      puts('KERNAL EXISTS')
     else
       puts('KERNAL DOES NOT EXIST')
       @link = Kernal.create(
