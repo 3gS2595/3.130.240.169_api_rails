@@ -1,6 +1,5 @@
 class SourceUrlsController < ApplicationController
-  before_action :authenticate_user!
-  before_action :set_source_url, only: %i[ show update destroy ]
+  before_action :authenticate_user!, :set_source_url, only: %i[ show update destroy ]
 
   # GET /source_urls
   def index

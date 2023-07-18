@@ -47,6 +47,6 @@ class HypertextsController < ApplicationController
     # Only allow a list of trusted parameters through.
     def hypertext_params
       params.require(:hypertext)
-      params.permit(:logo_path, :source_url_id,:url, :name, :scrape_interval, :time_last_scrape, :time_initial_scrape)
+      params.permit(:logo_path, :source_url_id, :url, :name, :scrape_interval, :time_last_scrape, :time_initial_scrape)
     end
 end
