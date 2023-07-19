@@ -3,18 +3,16 @@ require 'tanakai'
 require './config/environment/'
 require "down"
 require "fileutils"
-
-
 class TumblrSpider < Tanakai::Base
+
   @name = "tumblr_spider"
   @engine = :selenium_firefox
   @config = {
-    user_agent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.84 Safari/537.36",
-    before_request: { delay: 2..3 }
+    before_request: { delay: 2..3 },
+    user_agent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.84 Safari/537.36"
   }
   
-  @source_url_id = SourceUrl.find_by!(domain: "tumblr.com").id
-  @start_urls = Hypertext.where(:source_url_id => @source_url_id).map{|x| (x.url + "/sitemap1.xml")}
+  @start_urls = Hypertext.where(:source_url_id => SourceUrl.find_by!(domain: "tumblr.com").id).map{|x| (x.url + "/sitemap1.xml")}
 
   def parse(response, url:, data: {})
     @account = Hypertext.find_by!(url:  url = (url.sub! '/sitemap1.xml', ''))
@@ -25,7 +23,7 @@ class TumblrSpider < Tanakai::Base
       @url = a.css('loc').text
       if Kernal.exists?(url:@url)
         puts('KERNAL EXISTS')
-      else
+      elsif a.css('loc').text
         request_to :parse_repo_page, url: absolute_url(a.css("loc").text, base: url)
         @time_posted = a.css('lastmod').text.sub! '+00:00', '0Z'
       end
@@ -45,7 +43,7 @@ class TumblrSpider < Tanakai::Base
     xp_tags =            "/html/body/div[1]/div/div[2]/div[2]/div/div/div/main/div/div/div/div[2]/div/div/div/article/div[2]/div/div/a"
     xp_auth =            "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/header/div/div[1]/div[1]/div/span[1]/a"
     xp_reblog_auth =     "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[1]/div[1]/div/div/div/span/div"
-    xp_reblog_two_auth =     "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[1]/div[1]/div[2]/div/div/span/span/span/a/div"
+    xp_reblog_two_auth = "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[1]/div[1]/div[2]/div/div/span/span/span/a/div"
 
 
 

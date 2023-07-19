@@ -36,8 +36,9 @@ gem 'kimurai'
 gem 'tanakai'
 gem 'down'
 gem 'fileutils'
-
-
+gem 'redis'
+gem 'sidekiq'
+gem 'sidekiq-scheduler'
 # Reduces boot times through caching; required in config/boot.rb
 gem "bootsnap", require: false
 
