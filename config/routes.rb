@@ -1,3 +1,5 @@
+require 'sidekiq/web'
+
 Rails.application.routes.draw do
   resources :source_urls
   resources :link_contents
@@ -12,4 +14,9 @@ Rails.application.routes.draw do
   get '/member-data', to: 'members#show'
   # Defines the root path route ("/")
   # root "articles#index"
+ 
+  # sidekiq
+  resources :events
+  mount Sidekiq::Web => '/sidekiq'
+  root to: 'events#index'
 end
