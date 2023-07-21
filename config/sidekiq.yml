@@ -1,8 +1,5 @@
-# config/sidekiq.yml
-
 :scheduler:
   :schedule:
-    tanakai_scheduler:
-      max_work_threads: 1
-      every: '10m'
-      class: TanakaiScheduler 
+    tumblr_spider:
+      every: '1m'
+      class: TumblrSpider 

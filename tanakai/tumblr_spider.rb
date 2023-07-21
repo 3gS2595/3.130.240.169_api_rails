@@ -1,9 +1,12 @@
 # tumblr_spider.rb
 require 'tanakai'
+require 'down'
+require 'fileutils'
+require 'sidekiq-scheduler'
 require './config/environment/'
-require "down"
-require "fileutils"
+
 class TumblrSpider < Tanakai::Base
+  include Sidekiq::Worker
 
   @name = "tumblr_spider"
   @engine = :selenium_firefox
@@ -13,7 +16,9 @@ class TumblrSpider < Tanakai::Base
   }
   
   @start_urls = Hypertext.where(:source_url_id => SourceUrl.find_by!(domain: "tumblr.com").id).map{|x| (x.url + "/sitemap1.xml")}
-
+  def perform()
+    spider = TumblrSpider.new.crawl!
+  end
   def parse(response, url:, data: {})
     @account = Hypertext.find_by!(url:  url = (url.sub! '/sitemap1.xml', ''))
     @source_url_id = @account.source_url_id
