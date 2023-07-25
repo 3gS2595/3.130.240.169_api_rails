@@ -1,29 +1,17 @@
-# tumblr_spider.rb
 require 'tanakai'
 require 'down'
 require 'fileutils'
-require 'sidekiq-scheduler'
 require './config/environment/'
 require 'aws-sdk-s3'
 
-client = Aws::S3::Client.new(
-  access_key_id: Rails.application.credentials.aws[:access_key_id],
-  secret_access_key: Rails.application.credentials.aws[:secret_access_key],
-  endpoint: 'https://crystal-hair.nyc3.digitaloceanspaces.com',
-  force_path_style: false, 
-  region: 'us-east-1'
-)
-
 class TumblrSpider < Tanakai::Base
-  include Sidekiq::Worker
-
   @name = "tumblr_spider"
   @engine = :selenium_firefox
   @config = {
     before_request: { delay: 2..3 },
     user_agent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.84 Safari/537.36"
   }
-  
+
   @start_urls = Hypertext.where(:source_url_id => SourceUrl.find_by!(domain: "tumblr.com").id).map{|x| (x.url + "/sitemap1.xml")}
   def perform()
     spider = TumblrSpider.new.crawl!
@@ -78,7 +66,7 @@ class TumblrSpider < Tanakai::Base
     elsif response.xpath(xp_img_tiny_reblog).attr('srcset')
       img_html = response.xpath(xp_img_tiny_reblog)
     end
-    
+
     if !img_html.nil?
       # IMAGE FILE
       file_path = ""
@@ -86,12 +74,20 @@ class TumblrSpider < Tanakai::Base
       tempfile = Down.download(img_html.attr('srcset').text.scan(/\bhttps?:\/\/[^\s]+\.(?:jpg|gif|png|pnj|gifv)\b/).last)
 
       file_path = tempfile.original_filename
+      FileUtils.mv(tempfile.path, "/home/pin/crystal_hair/crystal_hair_ui_vueCL/public/feed/#{tempfile.original_filename}")
+
+      client = Aws::S3::Client.new(
+        access_key_id: Rails.application.credentials.aws[:access_key_id],
+        secret_access_key: Rails.application.credentials.aws[:secret_access_key],
+        endpoint: 'https://crystal-hair.nyc3.digitaloceanspaces.com',
+        force_path_style: false,
+        region: 'us-east-1'
+      )
       client.put_object({
         bucket: "crystal-hair",
         key: file_path,
-        body: tempFile.read,
+        body: File.read("/home/pin/crystal_hair/crystal_hair_ui_vueCL/public/feed/#{tempfile.original_filename}"),
         acl: "private"
-        }
       })
 
       # DESCRIPTIOM
@@ -100,7 +96,7 @@ class TumblrSpider < Tanakai::Base
       if !descr.empty?
         description = descr.text
       end
-      
+
       # HASHTAGS
       hashtags = ""
       tags = response.xpath(xp_tags)
@@ -137,13 +133,13 @@ class TumblrSpider < Tanakai::Base
         puts("author= " + author)
         puts("url= " + url)
         @link = Kernal.create(
-          source_url_id:@source_url_id, 
-          hypertext_id:@hypertext_id, 
-          file_path:file_path, 
-          file_name:file_path, 
-          description:description, 
-          hashtags:hashtags, 
-          author:author, 
+          source_url_id:@source_url_id,
+          hypertext_id:@hypertext_id,
+          file_path:file_path,
+          file_name:file_path,
+          description:description,
+          hashtags:hashtags,
+          author:author,
           url:url
         )
       end
@@ -152,3 +148,4 @@ class TumblrSpider < Tanakai::Base
 end
 
 TumblrSpider.crawl!
+

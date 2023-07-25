@@ -6,7 +6,7 @@ class TanakaiScheduler
   include Sidekiq::Worker
 
   def perform
-    puts('test')
-    TumblrSpider 
+    spider = TumblrSpider
+    spider.crawl!
   end
 end
