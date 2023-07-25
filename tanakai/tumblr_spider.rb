@@ -4,6 +4,15 @@ require 'down'
 require 'fileutils'
 require 'sidekiq-scheduler'
 require './config/environment/'
+require 'aws-sdk-s3'
+
+client = Aws::S3::Client.new(
+  access_key_id: Rails.application.credentials.aws[:access_key_id],
+  secret_access_key: Rails.application.credentials.aws[:secret_access_key],
+  endpoint: 'https://crystal-hair.nyc3.digitaloceanspaces.com',
+  force_path_style: false, 
+  region: 'us-east-1'
+)
 
 class TumblrSpider < Tanakai::Base
   include Sidekiq::Worker
@@ -75,8 +84,15 @@ class TumblrSpider < Tanakai::Base
       file_path = ""
       puts(img_html.attr('srcset').text.scan(/\bhttps?:\/\/[^\s]+\.(?:jpg|gif|png|pnj|gifv)\b/).last)
       tempfile = Down.download(img_html.attr('srcset').text.scan(/\bhttps?:\/\/[^\s]+\.(?:jpg|gif|png|pnj|gifv)\b/).last)
+
       file_path = tempfile.original_filename
-      FileUtils.mv(tempfile.path, "/home/pin/crystal_hair/crystal_hair_ui_vueCL/public/feed/#{tempfile.original_filename}")
+      client.put_object({
+        bucket: "crystal-hair",
+        key: file_path,
+        body: tempFile.read,
+        acl: "private"
+        }
+      })
 
       # DESCRIPTIOM
       description = ""
