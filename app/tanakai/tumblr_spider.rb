@@ -87,7 +87,7 @@ class TumblrSpider < Tanakai::Base
         bucket: "crystal-hair",
         key: file_path,
         body: File.read("/home/ubuntu/img/#{tempfile.original_filename}"),
-        acl: "public"
+        acl: "public-read"
       }) 
       
       # DESCRIPTIOM
