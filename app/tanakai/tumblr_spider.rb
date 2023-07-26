@@ -74,22 +74,22 @@ class TumblrSpider < Tanakai::Base
       tempfile = Down.download(img_html.attr('srcset').text.scan(/\bhttps?:\/\/[^\s]+\.(?:jpg|gif|png|pnj|gifv)\b/).last)
 
       file_path = tempfile.original_filename
-      FileUtils.mv(tempfile.path, "/home/pin/crystal_hair/crystal_hair_ui_vueCL/public/feed/#{tempfile.original_filename}")
-
+      FileUtils.mv(tempfile.path, "/home/ubuntu/img/#{tempfile.original_filename}")
+      Aws.use_bundled_cert!
       client = Aws::S3::Client.new(
         access_key_id: Rails.application.credentials.aws[:access_key_id],
         secret_access_key: Rails.application.credentials.aws[:secret_access_key],
-        endpoint: 'https://crystal-hair.nyc3.digitaloceanspaces.com',
+        endpoint: 'https://nyc3.digitaloceanspaces.com',
         force_path_style: false,
         region: 'us-east-1'
       )
       client.put_object({
         bucket: "crystal-hair",
         key: file_path,
-        body: File.read("/home/pin/crystal_hair/crystal_hair_ui_vueCL/public/feed/#{tempfile.original_filename}"),
-        acl: "private"
-      })
-
+        body: File.read("/home/ubuntu/img/#{tempfile.original_filename}"),
+        acl: "public"
+      }) 
+      
       # DESCRIPTIOM
       description = ""
       descr = response.xpath(xp_descr)

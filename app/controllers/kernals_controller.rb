@@ -1,5 +1,4 @@
 class KernalsController < ApplicationController
-  before_action :authenticate_user!
   before_action :set_kernal, only: %i[ show update destroy ]
 
   # GET /kernals
