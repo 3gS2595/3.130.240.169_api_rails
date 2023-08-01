@@ -3,7 +3,9 @@ class KernalsController < ApplicationController
 
   # GET /kernals
   def index
-    render json: Kernal.all 
+    @q = Kernal.ransack(search_params)
+    @q.sorts = 'created_at desc' if @q.sorts.empty?
+    render json:  @q.result
   end
 
   # GET /kernals/1
@@ -37,6 +39,16 @@ class KernalsController < ApplicationController
   end
 
   private
+    def search_params
+      key = ""
+      Kernal.column_names.each do |e|
+        key = key + e + "_or_"
+      end
+      key.chomp('_or_')
+      key = key + "_cont"
+      default_params = {key => params[:q]}
+    end
+
     # Use callbacks to share common setup or constraints between actions.
     def set_kernal
       @kernal = Kernal.find(params[:id])

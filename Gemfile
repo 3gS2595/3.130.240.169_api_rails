@@ -31,7 +31,8 @@ gem 'fileutils'
 gem 'redis'
 gem 'sidekiq'
 gem 'sidekiq-scheduler'
-
+gem 'mini_magick'
+gem 'ransack', :github => 'activerecord-hackery/ransack', :branch => 'main'
 # Reduces boot times through caching; required in config/boot.rb
 gem "bootsnap", require: false
 

@@ -1,13 +1,12 @@
 class HypertextsController < ApplicationController
   before_action :authenticate_user!, :set_hypertext, only: %i[ show update destroy ]
 
-  # GET /hypertexts
+ # GET /hypertexts
   def index
-    @hypertexts = Hypertext.all
-
-    render json: @hypertexts
+    @q = Hypertext.ransack(search_params)
+    @q.sorts = 'created_at asc' if @q.sorts.empty?
+    render json:  @q.result
   end
-
   # GET /hypertexts/1
   def show
     render json: @hypertext
@@ -39,14 +38,24 @@ class HypertextsController < ApplicationController
   end
 
   private
-    # Use callbacks to share common setup or constraints between actions.
-    def set_hypertext
-      @hypertext = Hypertext.find(params[:id])
-    end
+  def search_params
+    key = ""
+    Hypertext.column_names.each do |e|
+      key = key + e + "_or_"
+      end
+    key.chomp('_or_')
+    key = key + "_cont"
+    default_params = {key => params[:q]}
+  end
 
-    # Only allow a list of trusted parameters through.
-    def hypertext_params
-      params.require(:hypertext)
-      params.permit(:logo_path, :source_url_id, :url, :name, :scrape_interval, :time_last_scrape, :time_initial_scrape)
-    end
+  # Use callbacks to share common setup or constraints between actions.
+  def set_hypertext
+    @hypertext = Hypertext.find(params[:id])
+  end
+
+  # Only allow a list of trusted parameters through.
+  def hypertext_params
+    params.require(:hypertext)
+    params.permit(:logo_path, :source_url_id, :url, :name, :scrape_interval, :time_last_scrape, :time_initial_scrape)
+  end
 end

@@ -3,9 +3,9 @@ class SourceUrlsController < ApplicationController
 
   # GET /source_urls
   def index
-    @source_urls = SourceUrl.all
-
-    render json: @source_urls
+    @q = SourceUrl.ransack(search_params)
+    @q.sorts = 'created_at desc' if @q.sorts.empty?
+    render json:  @q.result
   end
 
   # GET /source_urls/1
@@ -39,6 +39,15 @@ class SourceUrlsController < ApplicationController
   end
 
   private
+    def search_params
+      key = ""
+      SourceUrl.column_names.each do |e|
+        key = key + e + "_or_"
+        end
+      key.chomp('_or_')
+      key = key + "_cont"
+      default_params = {key => params[:q]}
+    end
     # Use callbacks to share common setup or constraints between actions.
     def set_source_url
       @source_url = SourceUrl.find(params[:id])

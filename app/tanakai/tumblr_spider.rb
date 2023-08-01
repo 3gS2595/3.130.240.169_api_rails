@@ -3,6 +3,7 @@ require 'down'
 require 'fileutils'
 require './config/environment/'
 require 'aws-sdk-s3'
+require 'mini_magick'
 
 class TumblrSpider < Tanakai::Base
   @name = "tumblr_spider"
@@ -40,14 +41,13 @@ class TumblrSpider < Tanakai::Base
     xp_img_tiny =        "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div/figure/div/img"
     xp_img_tiny_reblog = "//*[@id='base-container']/div[2]/div[2]/div/div/div/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[2]/div/div[1]/div/button/span/figure/div/img"
     xp_img_medium =      "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[2]/div/div[1]/button/span/figure/div/img"
-
+    
+    # METADATA
     xp_descr =           "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[2]/p"
     xp_tags =            "/html/body/div[1]/div/div[2]/div[2]/div/div/div/main/div/div/div/div[2]/div/div/div/article/div[2]/div/div/a"
     xp_auth =            "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/header/div/div[1]/div[1]/div/span[1]/a"
     xp_reblog_auth =     "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[1]/div[1]/div/div/div/span/div"
     xp_reblog_two_auth = "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[1]/div[1]/div[2]/div/div/span/span/span/a/div"
-
-
 
     # IMG LOCATING, EXTRACTION
     # size standard
@@ -69,27 +69,20 @@ class TumblrSpider < Tanakai::Base
 
     if !img_html.nil?
       # IMAGE FILE
-      file_path = ""
-      puts(img_html.attr('srcset').text.scan(/\bhttps?:\/\/[^\s]+\.(?:jpg|gif|png|pnj|gifv)\b/).last)
-      tempfile = Down.download(img_html.attr('srcset').text.scan(/\bhttps?:\/\/[^\s]+\.(?:jpg|gif|png|pnj|gifv)\b/).last)
-
-      file_path = tempfile.original_filename
-      FileUtils.mv(tempfile.path, "/home/ubuntu/img/#{tempfile.original_filename}")
-      Aws.use_bundled_cert!
-      client = Aws::S3::Client.new(
-        access_key_id: Rails.application.credentials.aws[:access_key_id],
-        secret_access_key: Rails.application.credentials.aws[:secret_access_key],
-        endpoint: 'https://nyc3.digitaloceanspaces.com',
-        force_path_style: false,
-        region: 'us-east-1'
-      )
-      client.put_object({
-        bucket: "crystal-hair",
-        key: file_path,
-        body: File.read("/home/ubuntu/img/#{tempfile.original_filename}"),
-        acl: "public"
-      }) 
       
+      url_path = img_html.attr('srcset').text.scan(/\bhttps?:\/\/[^\s]+\.(?:jpg|gif|png|pnj|gifv)\b/).last
+      puts(url_path)
+      tempfile = Down.download(url_path)
+      
+      save_path = "/tmp/tanakai"
+      file_path = ""
+      file_path = tempfile.original_filename
+      FileUtils.mv(tempfile.path, "#{save_path}/#{tempfile.original_filename}")
+      image = MiniMagick::Image.open("#{save_path}/#{tempfile.original_filename}")
+      image.path #=> "#{save_path}/img/#{tempfile.original_filename}"
+      image.resize "180x180"
+      image.write "#{save_path}/nail/#{tempfile.original_filename}"
+
       # DESCRIPTIOM
       description = ""
       descr = response.xpath(xp_descr)
@@ -132,6 +125,28 @@ class TumblrSpider < Tanakai::Base
         puts("hashtags= " + hashtags)
         puts("author= " + author)
         puts("url= " + url)
+
+        Aws.use_bundled_cert!
+        s3client = Aws::S3::Client.new(
+          access_key_id: Rails.application.credentials.aws[:access_key_id],
+          secret_access_key: Rails.application.credentials.aws[:secret_access_key],
+          endpoint: 'https://nyc3.digitaloceanspaces.com',
+          force_path_style: false,
+          region: 'us-east-1'
+        )
+        s3client.put_object({
+          bucket: "crystal-hair",
+          key: file_path,
+          body: File.read("#{save_path}/#{tempfile.original_filename}"),
+          acl: "public-read"
+        })
+        
+        s3client.put_object({
+          bucket: "crystal-hair-nail",
+          key: file_path,
+          body: File.read("#{save_path}/nail/#{tempfile.original_filename}"),
+          acl: "public-read"
+        })
         @link = Kernal.create(
           source_url_id:@source_url_id,
           hypertext_id:@hypertext_id,
@@ -143,9 +158,12 @@ class TumblrSpider < Tanakai::Base
           url:url
         )
       end
+
+      # CLEAN UP
+      File.delete("#{save_path}/#{tempfile.original_filename}") if File.exist?("#{save_path}/#{tempfile.original_filename}")
+      File.delete("#{save_path}/nail/#{tempfile.original_filename}") if File.exist?("#{save_path}/nail/#{tempfile.original_filename}")
     end
   end
 end
 
 TumblrSpider.crawl!
-

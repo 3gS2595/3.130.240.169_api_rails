@@ -1,13 +1,11 @@
 class LinkContentsController < ApplicationController
-
-  before_action :authenticate_user!
   before_action :set_link_content, only: %i[ show update destroy ]
 
   # GET /link_contents
   def index
-    @link_contents = LinkContent.all
-
-    render json: @link_contents
+    @q = LinkContent.ransack(search_params)
+    @q.sorts = 'created_at desc' if @q.sorts.empty?
+    render json:  @q.result
   end
 
   # GET /link_contents/1
@@ -41,6 +39,16 @@ class LinkContentsController < ApplicationController
   end
 
   private
+    def search_params
+      key = ""
+      LinkContent.column_names.each do |e|
+        key = key + e + "_or_"
+        end
+      key.chomp('_or_')
+      key = key + "_cont"
+      default_params = {key => params[:q]}
+    end
+
     # Use callbacks to share common setup or constraints between actions.
     def set_link_content
       @link_content = LinkContent.find(params[:id])
