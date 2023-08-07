@@ -1,5 +1,5 @@
 scheduler:
   :schedule:
     tanakai_scheduler:
-      every: 2m   # Runs once per minute
+      every: 10m   # Runs once per minute
       class: TanakaiScheduler 

@@ -1,10 +1,39 @@
 class KernalsController < ApplicationController
-  before_action :set_kernal, only: %i[ show update destroy ]
+  before_action :authenticate_user!
 
   # GET /kernals
   def index
+    Aws.use_bundled_cert!
+    s3_client = Aws::S3::Client.new(
+      access_key_id: Rails.application.credentials.aws[:access_key_id],
+      secret_access_key: Rails.application.credentials.aws[:secret_access_key],
+      endpoint: 'https://nyc3.digitaloceanspaces.com',
+      force_path_style: false,
+      region: 'us-east-1'
+    )
+    signer = Aws::S3::Presigner.new(client: s3_client)
     @q = Kernal.ransack(search_params)
-    @q.sorts = 'created_at desc' if @q.sorts.empty?
+    @q.result.each do |kernal|
+      if kernal.file_path.length > 0
+        url = signer.presigned_url(
+          :get_object,
+          bucket: "crystal-hair",
+          key: kernal.file_path,
+          expires_in: 300
+        )
+        url_nail = signer.presigned_url(
+          :get_object,
+          bucket: "crystal-hair-nail",
+          key: kernal.file_path,
+          expires_in: 300
+        )
+        kernal.signed_url = url
+        kernal.signed_url_nail = url_nail
+        kernal.save
+      end
+    end 
+
+    @q.sorts = 'time_posted desc' if @q.sorts.empty?
     render json:  @q.result
   end
 
@@ -40,13 +69,10 @@ class KernalsController < ApplicationController
 
   private
     def search_params
-      key = ""
-      Kernal.column_names.each do |e|
-        key = key + e + "_or_"
-      end
-      key.chomp('_or_')
-      key = key + "_cont"
-      default_params = {key => params[:q]}
+      qkey = ''
+      Kernal.column_names.each { |e| qkey = qkey + e + '_or_' }
+      qkey =  qkey.chomp('_or_') + '_i_cont_any'
+      default_params = {qkey => params[:q]}
     end
 
     # Use callbacks to share common setup or constraints between actions.
@@ -57,6 +83,6 @@ class KernalsController < ApplicationController
     # Only allow a list of trusted parameters through.
     def kernal_params
       params.require(:kernal)
-      params.permit(:hypertext_id, :source_url_id, :file_type, :file_name, :file_path, :url, :size, :author, :time_posted, :time_scraped, :description, :key_words, :hashtags, :likes, :reposts)
+      params.permit(:hypertext_id, :source_url_id, :signed_url, :signed_url_nail, :file_type, :file_name, :file_path, :url, :size, :author, :time_posted, :time_scraped, :description, :key_words, :hashtags, :likes, :reposts)
     end
 end

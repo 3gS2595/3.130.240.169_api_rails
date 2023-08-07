@@ -1,5 +1,5 @@
 class LinkContentsController < ApplicationController
-  before_action :set_link_content, only: %i[ show update destroy ]
+  before_action :authenticate_user!
 
   # GET /link_contents
   def index
@@ -40,13 +40,10 @@ class LinkContentsController < ApplicationController
 
   private
     def search_params
-      key = ""
-      LinkContent.column_names.each do |e|
-        key = key + e + "_or_"
-        end
-      key.chomp('_or_')
-      key = key + "_cont"
-      default_params = {key => params[:q]}
+      qkey = ''
+      LinkContent.column_names.each { |e| qkey = qkey + e + '_or_' }
+      qkey =  qkey.chomp('_or_') + '_i_cont_any'
+      default_params = {qkey => params[:q]}
     end
 
     # Use callbacks to share common setup or constraints between actions.

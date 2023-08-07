@@ -79,6 +79,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_14_165402) do
     t.string "hashtags"
     t.string "likes"
     t.string "reposts"
+    t.string "signed_url"
+    t.string "signed_url_nail"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end

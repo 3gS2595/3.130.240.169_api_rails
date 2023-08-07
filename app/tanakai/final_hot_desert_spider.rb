@@ -17,14 +17,32 @@ class ScrapperModule
     outLinks.each do |e|
       url = e.sub! 'http://', 'https://'
       link = Nokogiri::HTML(Net::HTTP.get(URI(e)))
-      
+
       # create new link_content
-      @link = LinkContent.create(source_url_id: "2d7f3c0a-8699-49c8-829f-435cb57262cb", url: e)
+      if !SourceUrl.exists?(domain: "https://www.finalhotdesert.com/")
+         SourceUrl.create(
+            domain: "https://www.finalhotdesert.com/",
+            logo_path: "finalHostDesert.png"
+         )
+      end
+
+      if !Hypertext.exists?(url: "https://www.finalhotdesert.com/past")
+        Hypertext.create(
+          source_url_id:SourceUrl.find_by(domain: "https://www.finalhotdesert.com/").id,
+          url: "https://www.finalhotdesert.com/past",
+          logo_path: "finalHotDesert.png",
+          name: "Final Hot Desert Past",
+        )
+      end
+      @link = LinkContent.create(
+        source_url_id: SourceUrl.find_by(domain: "https://www.finalhotdesert.com/past").id,
+        url: e
+      )
 
       link.css('div.container').css('div.page-element').each do|n|
         imgName = n.attr('data-prefix')
         imgType = n.attr('data-suffix')
-        if imgName
+        if imgName && !Kernal.exists?(file_name: imgName)
           file_path = imgName.split('/').last + "." + imgType
           tempfile = Down.download(imgName + "." + imgType)
           FileUtils.mv(tempfile.path, "/home/ubuntu/img/#{tempfile.original_filename}")
@@ -56,7 +74,13 @@ class ScrapperModule
 
 
           #create new kernal 
-          Kernal.create(hypertext_id:@link.id, file_path: file_path, file_name:imgName, file_type:imgType)
+          Kernal.create(
+            hypertext_id:@link.id, 
+            file_path: file_path, 
+            file_name:imgName, 
+            file_type:imgType,
+            url: e
+          )
         end
       end
     end

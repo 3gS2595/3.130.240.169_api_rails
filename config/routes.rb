@@ -5,6 +5,7 @@ Rails.application.routes.draw do
   resources :link_contents
   resources :kernals
   resources :hypertexts
+
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
   devise_for :users,
             controllers: {
@@ -18,5 +19,5 @@ Rails.application.routes.draw do
   # sidekiq
   resources :events
   mount Sidekiq::Web => '/sidekiq'
-  root to: 'events#index'
+  root to: proc { [404, {}, ["Not found."]] }
 end

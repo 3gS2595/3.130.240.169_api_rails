@@ -7,6 +7,5 @@ class TanakaiScheduler
 
   def perform
     spider = TumblrSpider
-    spider.crawl!
   end
 end

@@ -16,7 +16,8 @@ class CreateKernals < ActiveRecord::Migration[7.0]
       t.string :hashtags
       t.string :likes
       t.string :reposts
-
+      t.string :signed_url
+      t.string :signed_url_nail
       t.timestamps
     end
   end
