@@ -12,7 +12,7 @@ class TumblrSpider < Tanakai::Base
   @name = "tumblr_spider"
   @engine = :selenium_firefox
   @config = {
-    before_request: { delay: 0..2 },
+    before_request: { delay: 0..1 },
     user_agent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.84 Safari/537.36"
   }
 
@@ -111,22 +111,6 @@ class TumblrSpider < Tanakai::Base
         image.resize "180x180"
         image.write "#{save_path}/nail/#{tempfile.original_filename}"
       end
-      file_path = tempfile.original_filename
-      FileUtils.mv(tempfile.path, "/home/ubuntu/img/#{tempfile.original_filename}")
-      Aws.use_bundled_cert!
-      client = Aws::S3::Client.new(
-        access_key_id: Rails.application.credentials.aws[:access_key_id],
-        secret_access_key: Rails.application.credentials.aws[:secret_access_key],
-        endpoint: 'https://nyc3.digitaloceanspaces.com',
-        force_path_style: false,
-        region: 'us-east-1'
-      )
-      client.put_object({
-        bucket: "crystal-hair",
-        key: file_path,
-        body: File.read("/home/ubuntu/img/#{tempfile.original_filename}"),
-        acl: "public-read"
-      }) 
       
       description = ""
       descr = response.xpath(xp_descr)

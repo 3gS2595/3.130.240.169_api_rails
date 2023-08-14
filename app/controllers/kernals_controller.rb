@@ -13,7 +13,13 @@ class KernalsController < ApplicationController
     )
     signer = Aws::S3::Presigner.new(client: s3_client)
     @q = Kernal.ransack(search_params)
-    @q.result.each do |kernal|
+    @q.sorts = 'time_posted desc' if @q.sorts.empty?
+    if (params.has_key?(:page))
+      @page = @q.result.page(params[:page])
+    else 
+      @page = @q.result
+    end
+    @page.each do |kernal|
       if kernal.file_path.length > 0
         url = signer.presigned_url(
           :get_object,
@@ -27,18 +33,16 @@ class KernalsController < ApplicationController
           key: kernal.file_path,
           expires_in: 300
         )
-        kernal.signed_url = url
-        kernal.signed_url_nail = url_nail
-        kernal.save
+        kernal.assign_attributes({ :signed_url => url})
+        kernal.assign_attributes({ :signed_url_nail => url_nail})
       end
-    end 
-
-    @q.sorts = 'time_posted desc' if @q.sorts.empty?
-    render json:  @q.result
+    end
+    render json:  @page
   end
 
   # GET /kernals/1
   def show
+    @kernal = Kernal.find(params[:id])
     render json: @kernal
   end
 
