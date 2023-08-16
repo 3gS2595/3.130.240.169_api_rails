@@ -10,6 +10,7 @@ class HypertextsController < ApplicationController
   
   # GET /hypertexts/1
   def show
+    @hypertext = Hypertext.find(params[:id])
     render json: @hypertext
   end
 
@@ -26,6 +27,7 @@ class HypertextsController < ApplicationController
 
   # PATCH/PUT /hypertexts/1
   def update
+    @hypertext = Hypertext.find(params[:id])
     if @hypertext.update(hypertext_params)
       render json: @hypertext
     else

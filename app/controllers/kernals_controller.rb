@@ -13,7 +13,7 @@ class KernalsController < ApplicationController
     )
     signer = Aws::S3::Presigner.new(client: s3_client)
     @q = Kernal.ransack(search_params)
-    @q.sorts = 'time_posted desc' if @q.sorts.empty?
+    @q.sorts = params[:sort] if @q.sorts.empty?
     if (params.has_key?(:page))
       @page = @q.result.page(params[:page])
     else 
@@ -68,6 +68,7 @@ class KernalsController < ApplicationController
 
   # DELETE /kernals/1
   def destroy
+    @kernal = Kernal.find(params[:id])
     @kernal.destroy
   end
 
