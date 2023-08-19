@@ -1,6 +1,7 @@
 require 'sidekiq/web'
 
 Rails.application.routes.draw do
+  resources :mixtapes
   resources :source_urls
   resources :link_contents
   resources :kernals

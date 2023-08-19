@@ -108,7 +108,7 @@ class TumblrSpider < Tanakai::Base
         FileUtils.mv(tempfile.path, "#{save_path}/#{tempfile.original_filename}")
         image = MiniMagick::Image.open("#{save_path}/#{tempfile.original_filename}")
         image.path #=> "#{save_path}/img/#{tempfile.original_filename}"
-        image.resize "180x180"
+        image.resize "165x165"
         image.write "#{save_path}/nail/#{tempfile.original_filename}"
       end
       
@@ -186,7 +186,7 @@ class TumblrSpider < Tanakai::Base
           })
           s3client.put_object({
             bucket: "crystal-hair-nail",
-            key: file_path,
+            key: 'nail_' + file_path,
             body: File.read("#{save_path}/nail/#{tempfile.original_filename}"),
             acl: "private"
           })

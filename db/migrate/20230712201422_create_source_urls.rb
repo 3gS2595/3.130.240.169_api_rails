@@ -5,7 +5,6 @@ class CreateSourceUrls < ActiveRecord::Migration[7.0]
       t.string :tag_list
       t.string :source
       t.string :logo_path
-
       t.timestamps
     end
   end

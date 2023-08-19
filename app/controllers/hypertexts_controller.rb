@@ -4,7 +4,7 @@ class HypertextsController < ApplicationController
   # GET /hypertexts
   def index
     @q = Hypertext.ransack(search_params)
-    @q.sorts = 'created_at desc' if @q.sorts.empty?
+    @q.sorts = params[:sort] if @q.sorts.empty?
     render json:  @q.result
   end
   
