@@ -10,7 +10,11 @@ module RansackUUIDHelper
 
     Kernal.column_names.each do |e|
       ransacker e do
-        Arel.sql("\"#{table_name}\".\"#{e}\"::varchar")
+        if e != 'siasdfze'
+          Arel.sql("\"#{table_name}\".\"#{e}\"::varchar")
+        else
+          Arel.sql("\"#{table_name}\".\"#{e}\"::float")
+        end
       end
     end
   
@@ -21,6 +25,12 @@ module RansackUUIDHelper
     end
     
     LinkContent.column_names.each do |e|
+      ransacker e do
+        Arel.sql("\"#{table_name}\".\"#{e}\"::varchar")
+      end
+    end
+    
+    Mixtape.column_names.each do |e|
       ransacker e do
         Arel.sql("\"#{table_name}\".\"#{e}\"::varchar")
       end

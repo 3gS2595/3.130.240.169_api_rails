@@ -37,6 +37,8 @@ class HypertextsController < ApplicationController
 
   # DELETE /hypertexts/1
   def destroy
+
+    @hypertext = Hypertext.find(params[:id])
     @hypertext.destroy
   end
 

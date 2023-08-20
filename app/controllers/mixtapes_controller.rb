@@ -1,10 +1,9 @@
 class MixtapesController < ApplicationController
-  before_action :set_mixtape, only: %i[ show update destroy ]
+  before_action :authenticate_user!
 
   # GET /mixtapes
   def index
     @mixtapes = Mixtape.all
-
     render json: @mixtapes
   end
 
@@ -16,7 +15,6 @@ class MixtapesController < ApplicationController
   # POST /mixtapes
   def create
     @mixtape = Mixtape.new(mixtape_params)
-
     if @mixtape.save
       render json: @mixtape, status: :created, location: @mixtape
     else
@@ -26,6 +24,7 @@ class MixtapesController < ApplicationController
 
   # PATCH/PUT /mixtapes/1
   def update
+    @mixtape = Mixtape.find(params[:id])
     if @mixtape.update(mixtape_params)
       render json: @mixtape
     else
@@ -35,6 +34,7 @@ class MixtapesController < ApplicationController
 
   # DELETE /mixtapes/1
   def destroy
+    @mixtape = mixtape.find(params[:id])
     @mixtape.destroy
   end
 
@@ -46,6 +46,6 @@ class MixtapesController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def mixtape_params
-      params.require(:mixtape).permit(:name)
+      params.permit(:name, :id, :content => [])
     end
 end

@@ -26,13 +26,13 @@ class TumblrSpider < Tanakai::Base
       if Kernal.exists?(url:@url)
         puts('KERNAL EXISTS')
       elsif a.css('loc').text
-        request_to :parse_repo_page, url: absolute_url(a.css("loc").text, base: url)
+        request_to :parse_repo_page, url: absolute_url(a.css("loc").text.sub( /[-0-9+()\\s\\[\\]x]*/, ''), base: url)
       end
     end
   end
 
   def parse_repo_page(response, url:, data: {})
-
+  puts('WE CRASHED BEFORE')
     # IMAGES
     xp_img_reblog =      "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[2]/div/div/button/span/figure/div/img"
     xp_img_standard =    "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[1]/button/span/figure/div/img"
@@ -40,6 +40,7 @@ class TumblrSpider < Tanakai::Base
     xp_img_tiny_reblog = "//*[@id='base-container']/div[2]/div[2]/div/div/div/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[2]/div/div[1]/div/button/span/figure/div/img"
     xp_img_medium =      "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[2]/div/div[1]/button/span/figure/div/img"
     xp_img_reblog_m =    "/html/body/div/div/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[2]/div/div[1]/button/span/figure/div/img"
+    xp_img_text =        "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[2]/button/span/figure/div/img"
     
     # TEXT
     xp_txt_standard =    "//*[@id='base-container']/div[2]/div[2]/div/div/div/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[1]/p"
@@ -72,6 +73,8 @@ class TumblrSpider < Tanakai::Base
       img_html = response.xpath(xp_img_tiny_reblog)
     elsif response.xpath(xp_img_reblog_m).attr('srcset')
       img_html = response.xpath(xp_img_reblog_m)
+    elsif response.xpath(xp_img_text).attr('srcset')
+      img_html = response.xpath(xp_img_text)
     end
     
     # TXT LOCATING, EXTRACTION
@@ -96,6 +99,7 @@ class TumblrSpider < Tanakai::Base
     end
 
     file_path = "" 
+    file_name = "" 
     file_type = ".txt"
     if !img_html.nil? || !text.nil?
       # IMAGE FILE
@@ -104,12 +108,15 @@ class TumblrSpider < Tanakai::Base
         url_path = img_html.attr('srcset').text.scan(/\bhttps?:\/\/[^\s]+\.(?:jpg|gif|png|pnj|gifv)\b/).last
         tempfile = Down.download(url_path)
         save_path = "/home/ubuntu"
-        file_path = tempfile.original_filename
-        FileUtils.mv(tempfile.path, "#{save_path}/#{tempfile.original_filename}")
-        image = MiniMagick::Image.open("#{save_path}/#{tempfile.original_filename}")
+        file_type = File.extname(tempfile.path)
+        file_path = SecureRandom.uuid + file_type
+        file_name = tempfile.original_filename
+        file_size = File.size(tempfile.path)
+        FileUtils.mv(tempfile.path, "#{save_path}/#{file_path}")
+        image = MiniMagick::Image.open("#{save_path}/#{file_path}")
         image.path #=> "#{save_path}/img/#{tempfile.original_filename}"
         image.resize "165x165"
-        image.write "#{save_path}/nail/#{tempfile.original_filename}"
+        image.write "#{save_path}/nail/#{file_path}"
       end
       
       description = ""
@@ -151,8 +158,7 @@ class TumblrSpider < Tanakai::Base
       # API POST
       puts(text.length)
       puts("\"" + description + "\"")
-      if Kernal.exists?(file_path: file_path) && text.length == 0 || file_path == nil
-        puts('kernal REJECTED EXISTS?')
+      if Kernal.exists?(file_name: file_name) && text.length == 0 || file_path == nil
         puts('kernal absent')
         puts('source_url_id: ' + @source_url_id)
         puts('hypertext_id' + @hypertext_id)
@@ -162,7 +168,7 @@ class TumblrSpider < Tanakai::Base
         puts('source_url_id: ' + @source_url_id)
         puts('hypertext_id' + @hypertext_id)
         puts("file_path= " + file_path)
-        puts("file_name= " + file_path)
+        puts("file_name= " + file_name)
         puts("description= " + description)
         puts("hashtags= " + hashtags)
         puts("author= " + author)
@@ -181,27 +187,28 @@ class TumblrSpider < Tanakai::Base
           s3client.put_object({
             bucket: "crystal-hair",
             key: file_path,
-            body: File.read("#{save_path}/#{tempfile.original_filename}"),
+            body: File.read("#{save_path}/#{file_path}"),
             acl: "private"
           })
           s3client.put_object({
             bucket: "crystal-hair-nail",
             key: 'nail_' + file_path,
-            body: File.read("#{save_path}/nail/#{tempfile.original_filename}"),
+            body: File.read("#{save_path}/nail/#{file_path}"),
             acl: "private"
           })
         end
         if !img_html.nil?
-          File.delete("#{save_path}/#{tempfile.original_filename}")
-          File.delete("#{save_path}/nail/#{tempfile.original_filename}")
+          File.delete("#{save_path}/#{file_path}")
+          File.delete("#{save_path}/nail/#{file_path}")
         end
 
         @link = Kernal.create(
           source_url_id:@source_url_id,
           hypertext_id:@hypertext_id,
           file_path:file_path,
-          file_name:file_path,
+          file_name:file_name,
           file_type:file_type,
+          size:file_size,
           description:description,
           hashtags:hashtags,
           author:author,

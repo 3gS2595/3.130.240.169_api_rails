@@ -12,16 +12,27 @@ class KernalsController < ApplicationController
       region: 'us-east-1'
     )
     signer = Aws::S3::Presigner.new(client: s3_client)
-    @q = Kernal.ransack(search_params)
-    puts(@q.result.length)
-    @q.sorts = params[:sort] if @q.sorts.empty?
-    puts('help')
-    puts(@q.result.length)
+    # collect by query or mixtape contents
+    if(params.has_key?(:mixtape))
+      content_ids = params[:mixtape].split(',')
+      @q = Kernal.where(id: content_ids).ransack(search_params)
+    else
+      @q = Kernal.ransack(search_params)
+    end
+
+    # sorting
+    if (params.has_key?(:sort))
+      @q.sorts = params[:sort]
+    end
+    
+    # pagination
     if (params.has_key?(:page))
       @page = @q.result.page(params[:page])
     else 
       @page = @q.result
     end
+ 
+    # presign urls
     @page.each do |kernal|
       if !kernal.file_path.nil?
         if kernal.file_path.length > 0
@@ -37,8 +48,7 @@ class KernalsController < ApplicationController
             key: "nail_" + kernal.file_path,
             expires_in: 300
           )
-          kernal.assign_attributes({ :signed_url => url})
-          kernal.assign_attributes({ :signed_url_nail => url_nail})
+          kernal.assign_attributes({ :signed_url => url, :signed_url_nail => url_nail})
         end
       end
     end
@@ -53,13 +63,16 @@ class KernalsController < ApplicationController
 
   # POST /kernals
   def create
-
     @kernal = Kernal.new(kernal_params)
-    uploader = TaskFileUploader.new(@kernal) 
-    File.open(params[:image]) do |file|
-      puts(file)
-     uploader.store!(file)
-    end 
+    if (params.has_key?(:image))
+      @kernal.assign_attributes({
+        :file_path => SecureRandom.uuid + params[:file_type]
+      })
+      uploader = TaskFileUploader.new(@kernal) 
+      File.open(params[:image]) do |file|
+        uploader.store!(file)
+      end 
+    end
     if @kernal.save
       render json: @kernal, status: :created, location: @kernal
     else
@@ -69,6 +82,7 @@ class KernalsController < ApplicationController
 
   # PATCH/PUT /kernals/1
   def update
+    @kernal = Kernal.find(params[:id])
     if @kernal.update(kernal_params)
       render json: @kernal
     else

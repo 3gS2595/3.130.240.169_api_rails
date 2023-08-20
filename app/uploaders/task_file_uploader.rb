@@ -5,7 +5,7 @@ class TaskFileUploader < CarrierWave::Uploader::Base
     nil 
   end
 def filename
-    model.file_name
+  model.file_path 
 end
   version :nail do
     self.aws_bucket = "crystal-hair-nail"
