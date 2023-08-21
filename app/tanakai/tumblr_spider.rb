@@ -32,21 +32,22 @@ class TumblrSpider < Tanakai::Base
   end
 
   def parse_repo_page(response, url:, data: {})
-  puts('WE CRASHED BEFORE')
     # IMAGES
     xp_img_reblog =      "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[2]/div/div/button/span/figure/div/img"
     xp_img_standard =    "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[1]/button/span/figure/div/img"
     xp_img_tiny =        "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div/figure/div/img"
-    xp_img_tiny_reblog = "//*[@id='base-container']/div[2]/div[2]/div/div/div/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[2]/div/div[1]/div/button/span/figure/div/img"
     xp_img_medium =      "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[2]/div/div[1]/button/span/figure/div/img"
-    xp_img_reblog_m =    "/html/body/div/div/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[2]/div/div[1]/button/span/figure/div/img"
     xp_img_text =        "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[2]/button/span/figure/div/img"
+    xp_img_texttwo =     "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[3]/button/span/figure/div/img"
+    xp_img_reblog_m =    "/html/body/div/div/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[2]/div/div[1]/button/span/figure/div/img"
+    xp_img_tiny_reblog = "//*[@id='base-container']/div[2]/div[2]/div/div/div/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[2]/div/div[1]/div/button/span/figure/div/img"
     
     # TEXT
     xp_txt_standard =    "//*[@id='base-container']/div[2]/div[2]/div/div/div/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[1]/p"
     xp_txt_reblog =      "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div[1]/div[2]/div/div/p"
     xp_text_mist =       "//*[@id='base-container']/div[2]/div/div[2]/div/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div/span"
     xp_text_standards =  "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div/span"
+    xp_text_head =  "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div/h1"
 
     # METADATA
     xp_descr =           "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[2]/p"
@@ -56,47 +57,42 @@ class TumblrSpider < Tanakai::Base
     xp_reblog_two_auth = "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[1]/div[1]/div[2]/div/div/span/span/span/a/div"
 
     # IMG LOCATING, EXTRACTION
-    # size standard
     if response.xpath(xp_img_standard).attr('srcset')
       img_html = response.xpath(xp_img_standard)
-    # size tiny
     elsif response.xpath(xp_img_tiny).attr('srcset')
       img_html = response.xpath(xp_img_tiny)
-    # size tiny? rebglog
     elsif response.xpath(xp_img_reblog).attr('srcset')
       img_html = response.xpath(xp_img_reblog)
-    # size tiny? rebglog
     elsif response.xpath(xp_img_tiny_reblog).attr('srcset')
       img_html = response.xpath(xp_img_tiny_reblog)
-    # size medium ?
     elsif response.xpath(xp_img_tiny_reblog).attr('srcset')
       img_html = response.xpath(xp_img_tiny_reblog)
     elsif response.xpath(xp_img_reblog_m).attr('srcset')
       img_html = response.xpath(xp_img_reblog_m)
     elsif response.xpath(xp_img_text).attr('srcset')
       img_html = response.xpath(xp_img_text)
+    elsif response.xpath(xp_img_texttwo).attr('srcset')
+      img_html = response.xpath(xp_img_texttwo)
     end
     
     # TXT LOCATING, EXTRACTION
     text = ''
     if response.xpath(xp_txt_standard).text && text.length == 0
       text = response.xpath(xp_txt_standard).text
-      puts("ping ping" + text)
-    # size tiny
     end
     if response.xpath(xp_txt_reblog).text && text.length == 0
       text = response.xpath(xp_txt_reblog).text
-      puts("ping ping" + text)
-    # size tiny? rebglog
     end
     if response.xpath(xp_text_mist).text && text.length == 0
       text = response.xpath(xp_text_mist).text
-      puts("ping ping" + text)
     end
     if response.xpath(xp_text_standards).text && text.length == 0
       text = response.xpath(xp_text_standards).text
-      puts("ping ping" + text)
     end
+    if response.xpath(xp_text_head).text && text.length == 0
+      text = response.xpath(xp_text_head).text
+    end
+    puts("FOUND TEXT" + text)
 
     file_path = "" 
     file_name = "" 
@@ -158,12 +154,9 @@ class TumblrSpider < Tanakai::Base
       # API POST
       puts(text.length)
       puts("\"" + description + "\"")
-      if Kernal.exists?(file_name: file_name) && text.length == 0 || file_path == nil
-        puts('kernal absent')
-        puts('source_url_id: ' + @source_url_id)
-        puts('hypertext_id' + @hypertext_id)
-        puts(img_html)
-      elsif !Kernal.exists?(url: url)
+      puts(url)
+      puts(url)
+      if !Kernal.exists?(url: url)
         puts('kernal absent')
         puts('source_url_id: ' + @source_url_id)
         puts('hypertext_id' + @hypertext_id)
@@ -197,27 +190,26 @@ class TumblrSpider < Tanakai::Base
             acl: "private"
           })
         end
+
         if !img_html.nil?
           File.delete("#{save_path}/#{file_path}")
           File.delete("#{save_path}/nail/#{file_path}")
         end
 
-        @link = Kernal.create(
-          source_url_id:@source_url_id,
-          hypertext_id:@hypertext_id,
-          file_path:file_path,
-          file_name:file_name,
-          file_type:file_type,
-          size:file_size,
-          description:description,
-          hashtags:hashtags,
-          author:author,
-          url:url,
-          time_posted: time_posted
-        )
+      @link = Kernal.create(
+        source_url_id:@source_url_id,
+        hypertext_id:@hypertext_id,
+        file_path:file_path,
+        file_name:file_name,
+        file_type:file_type,
+        size:file_size,
+        description:description,
+        hashtags:hashtags,
+        author:author,
+        url:url,
+        time_posted: time_posted
+      )
       end
-
-      # CLEAN UP
     end
   end
 end
