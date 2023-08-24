@@ -3,8 +3,7 @@ class KernalsController < ApplicationController
 
   # GET /kernals
   def index
-    # collect search sort
-
+    # collect search
     if (params.has_key?(:mixtape)) { @q = Kernal.where(id: params[:mixtape].split(',')).ransack(search_params) }
     elsif (params.has_key?(:q)) { @q = Kernal.ransack(search_params) }
     
