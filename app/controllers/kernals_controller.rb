@@ -6,7 +6,7 @@ class KernalsController < ApplicationController
     # collect search sort
 
     if (params.has_key?(:mixtape)) { @q = Kernal.where(id: params[:mixtape].split(',')).ransack(search_params) }
-    else (params.has_key?(:q)) { @q = Kernal.ransack(search_params) }
+    elsif (params.has_key?(:q)) { @q = Kernal.ransack(search_params) }
     if (params.has_key?(:sort)) { @q.sorts = params[:sort] }
     
     # pagination
