@@ -1,6 +1,5 @@
 class SourceUrl < ApplicationRecord
-
-include RansackUUIDHelper
+  include RansackUUIDHelper
   has_many :kernals
   has_many :hypertexts
   def self.ransackable_attributes(auth_object = nil)
@@ -9,5 +8,4 @@ include RansackUUIDHelper
   def self.ransackable_associations(auth_object = nil)
     ["hypertexts", "kernals"]
   end
-
 end
