@@ -3,53 +3,40 @@ class KernalsController < ApplicationController
 
   # GET /kernals
   def index
+    # collect search sort
+    @q = Kernal.all
+    if (params.has_key?(:mixtape)) { @q = @q.where(id: params[:mixtape].split(',')) }
+    if (params.has_key?(:q)) { @q = @q.ransack(search_params) }
+    if (params.has_key?(:sort)) { @q.sorts = params[:sort] }
+    
+    # pagination
+    @page = @q.result
+    if (params.has_key?(:page)) { @page = @page.page(params[:page]) }
+ 
+    # presign urls
     Aws.use_bundled_cert!
     s3_client = Aws::S3::Client.new(
       access_key_id: Rails.application.credentials.aws[:access_key_id],
       secret_access_key: Rails.application.credentials.aws[:secret_access_key],
       endpoint: 'https://nyc3.digitaloceanspaces.com',
-      force_path_style: false,
       region: 'us-east-1'
     )
     signer = Aws::S3::Presigner.new(client: s3_client)
-    # collect by query or mixtape contents
-    if(params.has_key?(:mixtape))
-      content_ids = params[:mixtape].split(',')
-      @q = Kernal.where(id: content_ids).ransack(search_params)
-    else
-      @q = Kernal.ransack(search_params)
-    end
-
-    # sorting
-    if (params.has_key?(:sort))
-      @q.sorts = params[:sort]
-    end
-    
-    # pagination
-    if (params.has_key?(:page))
-      @page = @q.result.page(params[:page])
-    else 
-      @page = @q.result
-    end
- 
-    # presign urls
     @page.each do |kernal|
       if !kernal.file_path.nil?
-        if kernal.file_path.length > 0
-          url = signer.presigned_url(
-            :get_object,
-            bucket: "crystal-hair",
-            key: kernal.file_path,
-            expires_in: 300
-          )
-          url_nail = signer.presigned_url(
-            :get_object,
-            bucket: "crystal-hair-nail",
-            key: "nail_" + kernal.file_path,
-            expires_in: 300
-          )
-          kernal.assign_attributes({ :signed_url => url, :signed_url_nail => url_nail})
-        end
+        url = signer.presigned_url(
+          :get_object,
+          bucket: "crystal-hair",
+          key: kernal.file_path,
+          expires_in: 300
+        )
+        url_nail = signer.presigned_url(
+          :get_object,
+          bucket: "crystal-hair-nail",
+          key: "nail_" + kernal.file_path,
+          expires_in: 300
+        )
+        kernal.assign_attributes({ :signed_url => url, :signed_url_nail => url_nail})
       end
     end
     render json:  @page
@@ -69,9 +56,7 @@ class KernalsController < ApplicationController
         :file_path => SecureRandom.uuid + params[:file_type]
       })
       uploader = TaskFileUploader.new(@kernal) 
-      File.open(params[:image]) do |file|
-        uploader.store!(file)
-      end 
+      File.open(params[:image]) do |file| { uploader.store!(file) }
     end
     if @kernal.save
       render json: @kernal, status: :created, location: @kernal
