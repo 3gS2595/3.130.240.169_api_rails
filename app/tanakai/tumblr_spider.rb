@@ -152,10 +152,6 @@ class TumblrSpider < Tanakai::Base
       time_posted = DateTime.parse(date)
 
       # API POST
-      puts(text.length)
-      puts("\"" + description + "\"")
-      puts(url)
-      puts(url)
       if !Kernal.exists?(url: url)
         puts('kernal absent')
         puts('source_url_id: ' + @source_url_id)

@@ -3,8 +3,14 @@ class MixtapesController < ApplicationController
 
   # GET /mixtapes
   def index
-    @mixtapes = Mixtape.all
-    render json: @mixtapes
+    @q = Mixtape.ransack(search_params)
+    @q.sorts = params[:sort] if @q.sorts.empty?
+    
+    @page = @q.result
+    if (params.has_key?(:page))
+      @page = @page.page(params[:page])
+    end
+    render json: @page
   end
 
   # GET /mixtapes/1
@@ -39,6 +45,13 @@ class MixtapesController < ApplicationController
   end
 
   private
+    def search_params
+      qkey = ''
+      Mixtape.column_names.each { |e| qkey = qkey + e + '_or_' }
+      qkey =  qkey.chomp('_or_') + '_i_cont_any'
+      default_params = {qkey => params[:q]}
+    end
+
     # Use callbacks to share common setup or constraints between actions.
     def set_mixtape
       @mixtape = Mixtape.find(params[:id])
