@@ -4,8 +4,10 @@ class MixtapesController < ApplicationController
   # GET /mixtapes
   def index
     @q = Mixtape.ransack(search_params)
-    @q.sorts = params[:sort] if @q.sorts.empty?
-    
+
+    if (params.has_key?(:sort))
+      @q.sorts = params[:sort] if @q.sorts.empty?
+    end 
     @page = @q.result
     if (params.has_key?(:page))
       @page = @page.page(params[:page])

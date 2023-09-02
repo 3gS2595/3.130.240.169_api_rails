@@ -7,7 +7,6 @@ class KernalsController < ApplicationController
     # collect search
     puts(params[:mixtape])
     if params.has_key?(:mixtape)
-      puts('hemlp')
       @q = Kernal.where(id: params[:mixtape].split(',')).ransack(search_params)
     else 
       @q = Kernal.ransack(search_params)
@@ -35,16 +34,25 @@ class KernalsController < ApplicationController
     signer = Aws::S3::Presigner.new(client: s3_client)
     @page.each do |kernal|
       if !kernal.file_path.nil? && kernal.file_path.length > 0
+        key = kernal.file_path
+        nailKey = kernal.file_path
+        if(kernal.file_type?)
+          if kernal.file_type == ".pdf"
+            puts(kernal.file_path)
+            key = kernal.file_path + ".pdf"
+            nailKey = kernal.file_path + ".png"
+          end
+        end
         url = signer.presigned_url(
           :get_object,
           bucket: "crystal-hair",
-          key: kernal.file_path,
+          key: key,
           expires_in: 300
         )
         url_nail = signer.presigned_url(
           :get_object,
           bucket: "crystal-hair-nail",
-          key: "nail_" + kernal.file_path,
+          key: "nail_" + nailKey,
           expires_in: 300
         )
         kernal.assign_attributes({ :signed_url => url, :signed_url_nail => url_nail})
