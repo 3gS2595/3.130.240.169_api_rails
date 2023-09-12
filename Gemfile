@@ -40,6 +40,7 @@ gem 'goldiloader'
 gem 'carrierwave-aws'
 gem 'carrierwave', '~> 1.0'
 gem 'arena'
+gem 'aws-sigv4'
 # Reduces boot times through caching; required in config/boot.rb
 gem "bootsnap", require: false
 

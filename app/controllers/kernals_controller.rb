@@ -24,36 +24,31 @@ class KernalsController < ApplicationController
     end
  
     # presign urls
-    Aws.use_bundled_cert!
-    s3_client = Aws::S3::Client.new(
+    signer = Aws::Sigv4::Signer.new(
+      service: "s3",
       access_key_id: Rails.application.credentials.aws[:access_key_id],
       secret_access_key: Rails.application.credentials.aws[:secret_access_key],
-      endpoint: 'https://nyc3.digitaloceanspaces.com',
       region: 'us-east-1'
     )
-    signer = Aws::S3::Presigner.new(client: s3_client)
     @page.each do |kernal|
       if !kernal.file_path.nil? && kernal.file_path.length > 0
         key = kernal.file_path
         nailKey = kernal.file_path
-        if(kernal.file_type?)
           if kernal.file_type == ".pdf"
-            puts(kernal.file_path)
             key = kernal.file_path + ".pdf"
             nailKey = kernal.file_path + ".png"
           end
-        end
-        url = signer.presigned_url(
-          :get_object,
-          bucket: "crystal-hair",
-          key: key,
-          expires_in: 300
+        url = signer.presign_url(
+          http_method: "GET",
+          url: "https://crystal-hair.nyc3.digitaloceanspaces.com/#{key}",
+          expires_in: 600,
+          body_digest: "UNSIGNED-PAYLOAD"
         )
-        url_nail = signer.presigned_url(
-          :get_object,
-          bucket: "crystal-hair-nail",
-          key: "nail_" + nailKey,
-          expires_in: 300
+        url_nail = signer.presign_url(
+          http_method: "GET",
+          url: "https://crystal-hair-nail.nyc3.digitaloceanspaces.com/nail_#{nailKey}",
+          expires_in: 600,
+          body_digest: "UNSIGNED-PAYLOAD"
         )
         kernal.assign_attributes({ :signed_url => url, :signed_url_nail => url_nail})
       end

@@ -8,7 +8,7 @@ require 'date'
 
 class TumblrSpider < Tanakai::Base
   @start_urls = Hypertext.where(
-    :source_url_id => SourceUrl.find_by!(domain: "tumblr.com").id).map{|x| (x.url + "/sitemap1.xml")}
+    :source_url_id => SourceUrl.find_by!(domain: "tumblr.com").id).drop(1).map{|x| (x.url + "/sitemap1.xml")}
   @name = "tumblr_spider"
   @engine = :selenium_firefox
   @config = {
@@ -33,28 +33,35 @@ class TumblrSpider < Tanakai::Base
 
   def parse_repo_page(response, url:, data: {})
     # IMAGES
-    xp_img_reblog =      "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[2]/div/div/button/span/figure/div/img"
-    xp_img_standard =    "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[1]/button/span/figure/div/img"
-    xp_img_tiny =        "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div/figure/div/img"
-    xp_img_medium =      "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[2]/div/div[1]/button/span/figure/div/img"
+    xp_img_reblog =      "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[2]/div/div/button/span/figure/div/img"
+    xp_img_standard =    "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[1]/button/span/figure/div/img"
+    xp_img_tiny =        "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div/figure/div/img"
+    xp_img_medium =      "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[2]/div/div[1]/button/span/figure/div/img"
     xp_img_text =        "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[2]/button/span/figure/div/img"
     xp_img_texttwo =     "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[3]/button/span/figure/div/img"
     xp_img_reblog_m =    "/html/body/div/div/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[2]/div/div[1]/button/span/figure/div/img"
     xp_img_tiny_reblog = "//*[@id='base-container']/div[2]/div[2]/div/div/div/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[2]/div/div[1]/div/button/span/figure/div/img"
+
+    xp_img_tiny_reblogs= "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div/button/span/figure/div/img"
+    xp_img_tiny_reblogd= "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[2]/div/div/button/span/figure/div/img"
+    xp_img_tiny_reblogf= "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div[1]/div[2]/div/div/button/span/figure/div/img"
+    xp_img_tiny_reblogf= "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[2]/div/div[1]/button/span/figure/div/img[1]"
+    xp_img_tiny_reblot = "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[2]/div/div/div/button/span/figure/div/img[1]"
+    xp_img_tiny_reblo  = "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[2]/div/div/div/button/span/figure/div/img[1]"
     
     # TEXT
     xp_txt_standard =    "//*[@id='base-container']/div[2]/div[2]/div/div/div/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[1]/p"
-    xp_txt_reblog =      "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div[1]/div[2]/div/div/p"
+    xp_txt_reblog =      "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div[1]/div[2]/div/div/p"
     xp_text_mist =       "//*[@id='base-container']/div[2]/div/div[2]/div/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div/span"
-    xp_text_standards =  "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div/span"
+    xp_text_standards =  "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div/span"
     xp_text_head =  "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div/h1"
 
     # METADATA
-    xp_descr =           "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[2]/p"
+    xp_descr =           "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[2]/p"
     xp_tags =            "/html/body/div[1]/div/div[2]/div[2]/div/div/div/main/div/div/div/div[2]/div/div/div/article/div[2]/div/div/a"
-    xp_auth =            "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/header/div/div[1]/div[1]/div/span[1]/a"
-    xp_reblog_auth =     "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[1]/div[1]/div/div/div/span/div"
-    xp_reblog_two_auth = "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[1]/div[1]/div[2]/div/div/span/span/span/a/div"
+    xp_auth =            "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/header/div/div[1]/div[1]/div/span[1]/a"
+    xp_reblog_auth =     "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[1]/div[1]/div/div/div/span/div"
+    xp_reblog_two_auth = "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[1]/div[1]/div[2]/div/div/span/span/span/a/div"
 
     # IMG LOCATING, EXTRACTION
     if response.xpath(xp_img_standard).attr('srcset')
@@ -73,8 +80,18 @@ class TumblrSpider < Tanakai::Base
       img_html = response.xpath(xp_img_text)
     elsif response.xpath(xp_img_texttwo).attr('srcset')
       img_html = response.xpath(xp_img_texttwo)
+    elsif response.xpath(xp_img_tiny_reblogs).attr('srcset')
+      img_html = response.xpath(xp_img_tiny_reblogs)
+    elsif response.xpath(xp_img_tiny_reblogd).attr('srcset')
+      img_html = response.xpath(xp_img_tiny_reblogd)
+    elsif response.xpath(xp_img_tiny_reblogf).attr('srcset')
+      img_html = response.xpath(xp_img_tiny_reblogf)
+    elsif response.xpath(xp_img_tiny_reblo).attr('srcset')
+      img_html = response.xpath(xp_img_tiny_reblo)
+    elsif response.xpath(xp_img_tiny_reblot).attr('srcset')
+      img_html = response.xpath(xp_img_tiny_reblot)
     end
-    
+
     # TXT LOCATING, EXTRACTION
     text = ''
     if response.xpath(xp_txt_standard).text && text.length == 0
@@ -105,14 +122,15 @@ class TumblrSpider < Tanakai::Base
         tempfile = Down.download(url_path)
         save_path = "/home/ubuntu"
         file_type = File.extname(tempfile.path)
-        file_path = SecureRandom.uuid + file_type
+        uuid = SecureRandom.uuid 
         file_name = tempfile.original_filename
         file_size = File.size(tempfile.path)
-        FileUtils.mv(tempfile.path, "#{save_path}/#{file_path}")
-        image = MiniMagick::Image.open("#{save_path}/#{file_path}")
-        image.path #=> "#{save_path}/img/#{tempfile.original_filename}"
-        image.resize "165x165"
-        image.write "#{save_path}/nail/#{file_path}"
+        image = MiniMagick::Image.open(tempfile.path)
+        image.format ".avif"
+        image.write "#{save_path}/#{uuid}.avif"
+        image.resize "100x100"
+        image.write "#{save_path}/nail/#{uuid}.avif"
+        file_path = uuid + ".avif"
       end
       
       description = ""
@@ -152,6 +170,10 @@ class TumblrSpider < Tanakai::Base
       time_posted = DateTime.parse(date)
 
       # API POST
+      #div/
+      if Kernal.exists?(url: url)
+        Kernal.where(url: url).delete_all
+      end
       if !Kernal.exists?(url: url)
         puts('kernal absent')
         puts('source_url_id: ' + @source_url_id)
@@ -188,8 +210,9 @@ class TumblrSpider < Tanakai::Base
         end
 
         if !img_html.nil?
-          File.delete("#{save_path}/#{file_path}")
+          File.delete(tempfile.path)
           File.delete("#{save_path}/nail/#{file_path}")
+          File.delete("#{save_path}/#{file_path}")
         end
 
       @link = Kernal.create(

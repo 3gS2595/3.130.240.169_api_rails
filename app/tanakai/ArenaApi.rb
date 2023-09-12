@@ -4,17 +4,19 @@ Arena.configure do |config|
     config.access_token = 'XC3fJj8wxLJIi0Bt39sxsoMpJ_39WpQtrLC7tD9ACwg'
 end
 
-#Kernal.where(file_type: ".pdf").delete_all
-#Kernal.where(file_type: "link").delete_all
-#Mixtape.delete_all
+Kernal.where(file_type: ".pdf").delete_all
+Kernal.where(file_type: "link").delete_all
+Kernal.where(file_type: ".avif").delete_all
+Mixtape.delete_all
+#e = Arena.block('964879')
 
 i = 0
 e = Arena.user_channels('494214', options={page: i}).channels
 while e.length > 0
   e.each do |a| 
     title = a.title
+    puts(a.title)
     chId = a.id
-    puts(title)
     if !Mixtape.exists?(name: title)
       @mix = Mixtape.create(
         name: title,
@@ -41,12 +43,15 @@ while e.length > 0
             tempfile = Down.download(url_path)
             save_path = "/home/ubuntu"
             file_type = File.extname(tempfile.path)
-            file_path = SecureRandom.uuid + file_type
+            uuid = SecureRandom.uuid
             file_size = File.size(tempfile.path)
-            FileUtils.mv(tempfile.path, "#{save_path}/#{file_path}")
-            image = MiniMagick::Image.open("#{save_path}/#{file_path}")
-            image.resize "165x165"
+            file_path = uuid + ".avif"
+            image = MiniMagick::Image.open(tempfile.path)
+            image.format(".avif")
+            image.write "#{save_path}/#{file_path}"
+            image.resize "100x100"
             image.write "#{save_path}/nail/#{file_path}"
+
             Aws.use_bundled_cert!
             s3client = Aws::S3::Client.new(
               access_key_id: Rails.application.credentials.aws[:access_key_id],
@@ -68,6 +73,7 @@ while e.length > 0
               acl: "private"
             })
 
+            File.delete(tempfile.path)
             File.delete("#{save_path}/#{file_path}")
             File.delete("#{save_path}/nail/#{file_path}")
 
@@ -115,9 +121,9 @@ while e.length > 0
             save_path = "/home/ubuntu"
             FileUtils.mv(tempfile.path, "#{save_path}/#{nail_path}")
             image = MiniMagick::Image.open("#{save_path}/#{nail_path}")
-            image.resize "165x165"
-            image.format(".png")
-            image.write "#{save_path}/nail/#{nail_path}"
+            image.format(".avif")
+            image.resize "100x100"
+            image.write "#{save_path}/nail/#{uuid}.avif"
 
             Aws.use_bundled_cert!
             s3client = Aws::S3::Client.new(
@@ -136,12 +142,12 @@ while e.length > 0
             s3client.put_object({
               bucket: "crystal-hair-nail",
               key: 'nail_' + nail_path,
-              body: File.read("#{save_path}/nail/#{nail_path}"),
+              body: File.read("#{save_path}/nail/#{uuid}.avif"),
               acl: "private"
             })
 
             File.delete(temppdf.path)
-            File.delete("#{save_path}/nail/#{nail_path}")
+            File.delete("#{save_path}/nail/#{uuid}.avif")
 
             @link = Kernal.create(
               file_path:uuid,
@@ -166,9 +172,7 @@ while e.length > 0
           end
         end
 
-        #if Kernal.exists?(url: url_path)
-        #  Kernal.where(url: url_path).delete_all
-        #end
+        
         if a.class.to_s.include? "Image"
           created_at = a.created_at
           updated_at = a.updated_at
@@ -180,17 +184,23 @@ while e.length > 0
           else
             url_path =  a.image.original.url
           end
-
+          if Kernal.exists?(url: url_path)
+            Kernal.where(url: url_path).delete_all
+          end
           if !Kernal.exists?(url: url_path)
             tempfile = Down.download(url_path)
             save_path = "/home/ubuntu"
             file_type = File.extname(tempfile.path)
-            file_path = SecureRandom.uuid + file_type
+            uuid = SecureRandom.uuid
+            file_path = uuid + ".avif" 
             file_size = File.size(tempfile.path)
-            FileUtils.mv(tempfile.path, "#{save_path}/#{file_path}")
-            image = MiniMagick::Image.open("#{save_path}/#{file_path}")
-            image.resize "165x165"
-            image.write "#{save_path}/nail/#{file_path}"
+            FileUtils.mv(tempfile.path, "#{save_path}/#{uuid}#{file_type}")
+            image = MiniMagick::Image.open("#{save_path}/#{uuid}#{file_type}")
+            image.format(".avif")
+            image.write "#{save_path}/#{uuid}.avif"
+            image.resize "100x100"
+            image.write "#{save_path}/nail/#{uuid}.avif"
+
             Aws.use_bundled_cert!
             s3client = Aws::S3::Client.new(
               access_key_id: Rails.application.credentials.aws[:access_key_id],
@@ -202,25 +212,26 @@ while e.length > 0
             s3client.put_object({
               bucket: "crystal-hair",
               key: file_path,
-              body: File.read("#{save_path}/#{file_path}"),
+              body: File.read("#{save_path}/#{uuid}.avif"),
               acl: "private"
             })
             s3client.put_object({
               bucket: "crystal-hair-nail",
               key: 'nail_' + file_path,
-              body: File.read("#{save_path}/nail/#{file_path}"),
+              body: File.read("#{save_path}/nail/#{uuid}.avif"),
               acl: "private"
             })
 
-            File.delete("#{save_path}/#{file_path}")
-            File.delete("#{save_path}/nail/#{file_path}")
+            File.delete("#{save_path}/#{uuid}#{file_type}")
+            File.delete("#{save_path}/#{uuid}.avif")
+            File.delete("#{save_path}/nail/#{uuid}.avif")
 
             @link = Kernal.create(
               file_path:file_path,
               file_name:file_name,
-              file_type:file_type,
+              file_type:".avif",
               size:file_size,
-              description:description,
+              description:description + " are.na",
               url:url_path,
               time_posted: created_at,
               created_at: created_at,
@@ -240,11 +251,7 @@ while e.length > 0
 
         if a.class.to_s.include? "Text"
 
-        if Kernal.exists?(description: a.content)
-          Kernal.where(description: a.content).delete_all
-        end
           if !Kernal.exists?(description: a.content)
-            puts(a.content)
             @link = Kernal.create(
               file_type:".txt",
               description: a.content,
@@ -254,6 +261,8 @@ while e.length > 0
               author: author
             )
             @mixtape.update(content: @mixtape.content.push(@link.id)) 
+          elsif !@mixtape.content.include? Kernal.where(description: a.content)[0].id
+            @mixtape.update(content: @mixtape.content.push(Kernal.where(description: a.content)[0].id))
           end
         end
 
