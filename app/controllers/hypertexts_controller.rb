@@ -4,17 +4,9 @@ class HypertextsController < ApplicationController
   # GET /hypertexts
   def index
     @q = Hypertext.ransack(search_params)
-    @q.sorts = params[:sort] if @q.sorts.empty?
-    
-    # pagination
-    @page = @q.result
-    if (params.has_key?(:page))
-      @page = @page.page(params[:page])
-    end
-
+    @q.sorts = params.has_key?(:sort) ? params[:sort] : null
+    @pagy, @page = params.has_key?(:page) ? pagy(@q.result) : @q.result 
     render json:  @page
- 
-
   end
   
   # GET /hypertexts/1

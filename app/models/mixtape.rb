@@ -1,5 +1,5 @@
 class Mixtape < ApplicationRecord
-  include RansackUUIDHelper
+  include RansackHelper
   def self.ransackable_associations(auth_object = nil)
     []
   end

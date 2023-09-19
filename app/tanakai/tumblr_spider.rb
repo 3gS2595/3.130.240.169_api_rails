@@ -33,83 +33,55 @@ class TumblrSpider < Tanakai::Base
 
   def parse_repo_page(response, url:, data: {})
     # IMAGES
-    xp_img_reblog =      "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[2]/div/div/button/span/figure/div/img"
-    xp_img_standard =    "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[1]/button/span/figure/div/img"
-    xp_img_tiny =        "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div/figure/div/img"
-    xp_img_medium =      "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[2]/div/div[1]/button/span/figure/div/img"
-    xp_img_text =        "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[2]/button/span/figure/div/img"
-    xp_img_texttwo =     "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[3]/button/span/figure/div/img"
-    xp_img_reblog_m =    "/html/body/div/div/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[2]/div/div[1]/button/span/figure/div/img"
-    xp_img_tiny_reblog = "//*[@id='base-container']/div[2]/div[2]/div/div/div/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[2]/div/div[1]/div/button/span/figure/div/img"
+    image_xpaths = [ 
+      "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[2]/div/div/button/span/figure/div/img",
+      "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[1]/button/span/figure/div/img",
+      "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div/figure/div/img",
+      "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[2]/div/div[1]/button/span/figure/div/img",
+      "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[2]/button/span/figure/div/img",
+      "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[3]/button/span/figure/div/img",
+      "/html/body/div/div/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[2]/div/div[1]/button/span/figure/div/img",
+      "//*[@id='base-container']/div[2]/div[2]/div/div/div/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[2]/div/div[1]/div/button/span/figure/div/img",
+      "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div/button/span/figure/div/img",
+      "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[2]/div/div/button/span/figure/div/img",
+      "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div[1]/div[2]/div/div/button/span/figure/div/img",
+      "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[2]/div/div[1]/button/span/figure/div/img[1]",
+      "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[2]/div/div/div/button/span/figure/div/img[1]",
+      "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[2]/div/div/div/button/span/figure/div/img[1]"
+    ]
 
-    xp_img_tiny_reblogs= "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div/button/span/figure/div/img"
-    xp_img_tiny_reblogd= "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[2]/div/div/button/span/figure/div/img"
-    xp_img_tiny_reblogf= "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div[1]/div[2]/div/div/button/span/figure/div/img"
-    xp_img_tiny_reblogf= "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[2]/div/div[1]/button/span/figure/div/img[1]"
-    xp_img_tiny_reblot = "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[2]/div/div/div/button/span/figure/div/img[1]"
-    xp_img_tiny_reblo  = "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[2]/div/div/div/button/span/figure/div/img[1]"
-    
     # TEXT
-    xp_txt_standard =    "//*[@id='base-container']/div[2]/div[2]/div/div/div/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[1]/p"
-    xp_txt_reblog =      "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div[1]/div[2]/div/div/p"
-    xp_text_mist =       "//*[@id='base-container']/div[2]/div/div[2]/div/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div/span"
-    xp_text_standards =  "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div/span"
-    xp_text_head =  "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div/h1"
+    text_xpath = [
+      "//*[@id='base-container']/div[2]/div[2]/div/div/div/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[1]/p",
+      "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div[1]/div[2]/div/div/p",
+      "//*[@id='base-container']/div[2]/div/div[2]/div/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div/span",
+      "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div/span",
+      "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div/h1"
+    ]
 
     # METADATA
-    xp_descr =           "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[2]/p"
-    xp_tags =            "/html/body/div[1]/div/div[2]/div[2]/div/div/div/main/div/div/div/div[2]/div/div/div/article/div[2]/div/div/a"
-    xp_auth =            "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/header/div/div[1]/div[1]/div/span[1]/a"
-    xp_reblog_auth =     "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[1]/div[1]/div/div/div/span/div"
-    xp_reblog_two_auth = "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[1]/div[1]/div[2]/div/div/span/span/span/a/div"
+    auth_xpath = [
+      "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/header/div/div[1]/div[1]/div/span[1]/a",
+      "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[1]/div[1]/div/div/div/span/div",
+      "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[1]/div[1]/div[2]/div/div/span/span/span/a/div"
+    ]
+    xp_descr = "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[2]/p"
+    xp_tags = "/html/body/div[1]/div/div[2]/div[2]/div/div/div/main/div/div/div/div[2]/div/div/div/article/div[2]/div/div/a"
 
     # IMG LOCATING, EXTRACTION
-    if response.xpath(xp_img_standard).attr('srcset')
-      img_html = response.xpath(xp_img_standard)
-    elsif response.xpath(xp_img_tiny).attr('srcset')
-      img_html = response.xpath(xp_img_tiny)
-    elsif response.xpath(xp_img_reblog).attr('srcset')
-      img_html = response.xpath(xp_img_reblog)
-    elsif response.xpath(xp_img_tiny_reblog).attr('srcset')
-      img_html = response.xpath(xp_img_tiny_reblog)
-    elsif response.xpath(xp_img_tiny_reblog).attr('srcset')
-      img_html = response.xpath(xp_img_tiny_reblog)
-    elsif response.xpath(xp_img_reblog_m).attr('srcset')
-      img_html = response.xpath(xp_img_reblog_m)
-    elsif response.xpath(xp_img_text).attr('srcset')
-      img_html = response.xpath(xp_img_text)
-    elsif response.xpath(xp_img_texttwo).attr('srcset')
-      img_html = response.xpath(xp_img_texttwo)
-    elsif response.xpath(xp_img_tiny_reblogs).attr('srcset')
-      img_html = response.xpath(xp_img_tiny_reblogs)
-    elsif response.xpath(xp_img_tiny_reblogd).attr('srcset')
-      img_html = response.xpath(xp_img_tiny_reblogd)
-    elsif response.xpath(xp_img_tiny_reblogf).attr('srcset')
-      img_html = response.xpath(xp_img_tiny_reblogf)
-    elsif response.xpath(xp_img_tiny_reblo).attr('srcset')
-      img_html = response.xpath(xp_img_tiny_reblo)
-    elsif response.xpath(xp_img_tiny_reblot).attr('srcset')
-      img_html = response.xpath(xp_img_tiny_reblot)
+    image_xpaths.each do | xpath |
+      if response.xpath(xpath).attr('srcset')
+        img_html = response.xpath(xpath)
+      end
     end
-
+    
     # TXT LOCATING, EXTRACTION
     text = ''
-    if response.xpath(xp_txt_standard).text && text.length == 0
-      text = response.xpath(xp_txt_standard).text
+    text_xpaths.each do | xpath |
+      if response.xpath(xpath).text && text.length == 0
+        text = response.xpath(xpath).text
+      end
     end
-    if response.xpath(xp_txt_reblog).text && text.length == 0
-      text = response.xpath(xp_txt_reblog).text
-    end
-    if response.xpath(xp_text_mist).text && text.length == 0
-      text = response.xpath(xp_text_mist).text
-    end
-    if response.xpath(xp_text_standards).text && text.length == 0
-      text = response.xpath(xp_text_standards).text
-    end
-    if response.xpath(xp_text_head).text && text.length == 0
-      text = response.xpath(xp_text_head).text
-    end
-    puts("FOUND TEXT" + text)
 
     file_path = "" 
     file_name = "" 
@@ -117,7 +89,6 @@ class TumblrSpider < Tanakai::Base
     if !img_html.nil? || !text.nil?
       # IMAGE FILE
       if !img_html.nil?
-        file_type = ".img"
         url_path = img_html.attr('srcset').text.scan(/\bhttps?:\/\/[^\s]+\.(?:jpg|gif|png|pnj|gifv)\b/).last
         tempfile = Down.download(url_path)
         save_path = "/home/ubuntu"
@@ -143,38 +114,48 @@ class TumblrSpider < Tanakai::Base
 
       # HASHTAGS
       hashtags = ""
-      tags = response.xpath(xp_tags)
-      if !tags.empty?
-        hashtags = tags.text
+      if response.xpath(xp_tags)
+        hashtags = response.xpath(xp_tags).text
       end
 
       # POST ACCOUNT
-      author = ""
-      auth = response.xpath(xp_auth)
-      if !auth.empty?
-        author = auth.text
-      end
-      auth = response.xpath(xp_reblog_auth)
-      if !auth.empty?
-        author = auth.text
-      end
-      auth = response.xpath(xp_reblog_two_auth)
-      if !auth.empty?
-        author = auth.text
+      author = "n/a"
+      auth_xpaths.each do | xpath |
+          if response.xpath(xpath)
+            author = response.xpath(xpath).text
+        end
       end
       
       date_script = response.xpath("//*[@id='tumblr']/script[1]").text
       date = date_script.split("\"date\"")
       date = date[1][2...25]
-      puts(date)
       time_posted = DateTime.parse(date)
 
       # API POST
-      #div/
-      if Kernal.exists?(url: url)
-        Kernal.where(url: url).delete_all
-      end
       if !Kernal.exists?(url: url)
+        if !img_html.nil? && text.length == 0
+          S3Uploader.new(
+            File.read("#{save_path}/#{file_path}"), 
+            File.read("#{save_path}/nail/#{file_path}"), 
+            file_path, 
+            'nail_' + file_path
+          )
+          File.delete(tempfile.path)
+          File.delete("#{save_path}/nail/#{file_path}")
+        end
+        @link = Kernal.create(
+          source_url_id:@source_url_id,
+          hypertext_id:@hypertext_id,
+          file_path:file_path,
+          file_name:file_name,
+          file_type:file_type,
+          size:file_size,
+          description:description,
+          hashtags:hashtags,
+          author:author,
+          url:url,
+          time_posted: time_posted
+        )
         puts('kernal absent')
         puts('source_url_id: ' + @source_url_id)
         puts('hypertext_id' + @hypertext_id)
@@ -185,52 +166,8 @@ class TumblrSpider < Tanakai::Base
         puts("author= " + author)
         puts("url= " + url)
         puts(time_posted)
-
-        if !img_html.nil? && text.length == 0
-          Aws.use_bundled_cert!
-          s3client = Aws::S3::Client.new(
-            access_key_id: Rails.application.credentials.aws[:access_key_id],
-            secret_access_key: Rails.application.credentials.aws[:secret_access_key],
-            endpoint: 'https://nyc3.digitaloceanspaces.com',
-            force_path_style: false,
-            region: 'us-east-1'
-          )
-          s3client.put_object({
-            bucket: "crystal-hair",
-            key: file_path,
-            body: File.read("#{save_path}/#{file_path}"),
-            acl: "private"
-          })
-          s3client.put_object({
-            bucket: "crystal-hair-nail",
-            key: 'nail_' + file_path,
-            body: File.read("#{save_path}/nail/#{file_path}"),
-            acl: "private"
-          })
-        end
-
-        if !img_html.nil?
-          File.delete(tempfile.path)
-          File.delete("#{save_path}/nail/#{file_path}")
-          File.delete("#{save_path}/#{file_path}")
-        end
-
-      @link = Kernal.create(
-        source_url_id:@source_url_id,
-        hypertext_id:@hypertext_id,
-        file_path:file_path,
-        file_name:file_name,
-        file_type:file_type,
-        size:file_size,
-        description:description,
-        hashtags:hashtags,
-        author:author,
-        url:url,
-        time_posted: time_posted
-      )
       end
     end
   end
 end
-
 TumblrSpider.crawl!

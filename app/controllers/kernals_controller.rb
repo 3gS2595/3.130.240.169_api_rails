@@ -1,27 +1,12 @@
 class KernalsController < ApplicationController
   before_action :authenticate_user!
 
-  # GET /kernals
+  # GET
   def index
-
-    # collect search
-    puts(params[:mixtape])
-    if params.has_key?(:mixtape)
-      @q = Kernal.where(id: params[:mixtape].split(',')).ransack(search_params)
-    else 
-      @q = Kernal.ransack(search_params)
-    end
-    
-    # sort column / sort direction
-    if (params.has_key?(:sort))
-      @q.sorts = params[:sort]
-    end
-    
-    # pagination
-    @page = @q.result
-    if (params.has_key?(:page))
-      @page = @page.page(params[:page])
-    end
+    @q = params.has_key?(:mixtape) ? Kernal.where(id: Mixtape.find(params[:mixtape]).content) : Kernal
+    @q = @q.ransack(search_params)
+    @q.sorts = params.has_key?(:sort) ? params[:sort] : null
+    @pagy, @page = params.has_key?(:page) ? pagy(@q.result) : @q.result 
  
     # presign urls
     signer = Aws::Sigv4::Signer.new(
@@ -36,7 +21,7 @@ class KernalsController < ApplicationController
         nailKey = kernal.file_path
           if kernal.file_type == ".pdf"
             key = kernal.file_path + ".pdf"
-            nailKey = kernal.file_path + ".png"
+            nailKey = kernal.file_path + ".avif"
           end
         url = signer.presign_url(
           http_method: "GET",
@@ -56,7 +41,7 @@ class KernalsController < ApplicationController
     render json: @page
   end
 
-  # GET /kernals/1
+  # GET
   def show
     @kernal = Kernal.find(params[:id])
     render json: @kernal
@@ -64,16 +49,23 @@ class KernalsController < ApplicationController
 
   # POST /kernals
   def create
-    @kernal = Kernal.new(kernal_params)
+    uuid = SecureRandom.uuid
+    @kernal = Kernal.new(
+      id: uuid,
+      file_path: uuid + params[:file_type],
+      file_type: params[:file_type],
+      time_posted: DateTime.now()
+    )
     if (params.has_key?(:image))
-      @kernal.assign_attributes({
-        :file_path => SecureRandom.uuid + params[:file_type]
-      })
-      uploader = TaskFileUploader.new(@kernal)
-      File.open(params[:image]) do |file|
-        uploader.store!(file)
-      end
+      File.open(params[:image]) do |file| ImageUploader.new(@kernal).store!(file) end
     end
+    if (params.has_key?(:pdf))
+      File.open(params[:pdf]) do |file| PdfUploader.new(@kernal).store!(file) end
+    end
+    if params.has_key?(:mixtape) 
+      @mixtape.update(content: @mixtape.content.push(@kernal.id))
+    end
+
     if @kernal.save
       render json: @kernal, status: :created, location: @kernal
     else
@@ -81,7 +73,7 @@ class KernalsController < ApplicationController
     end
   end
 
-  # PATCH/PUT /kernals/1
+  # PATCH/PUT
   def update
     @kernal = Kernal.find(params[:id])
     if @kernal.update(kernal_params)
@@ -91,7 +83,7 @@ class KernalsController < ApplicationController
     end
   end
 
-  # DELETE /kernals/1
+  # DELETE
   def destroy
     @kernal = Kernal.find(params[:id])
     @kernal.destroy
@@ -116,6 +108,6 @@ class KernalsController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def kernal_params
-      params.permit(:hypertext_id, :source_url_id, :signed_url, :signed_url_nail, :file_type, :file_name, :file_path, :url, :size, :author, :time_posted, :time_scraped, :description, :key_words, :hashtags, :likes, :reposts)
+      params.permit(:image, :mixtape, :hypertext_id, :source_url_id, :signed_url, :signed_url_nail, :file_type, :file_name, :file_path, :url, :size, :author, :time_posted, :time_scraped, :description, :key_words, :hashtags, :likes, :reposts)
     end
 end

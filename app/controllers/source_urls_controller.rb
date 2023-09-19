@@ -4,7 +4,7 @@ class SourceUrlsController < ApplicationController
   # GET /source_urls
   def index
     @q = SourceUrl.ransack(search_params)
-    @q.sorts = 'created_at desc' if @q.sorts.empty?
+    @q.sorts = params.has_key?(:sort) ? params[:sort] : null 
     render json:  @q.result
   end
 
