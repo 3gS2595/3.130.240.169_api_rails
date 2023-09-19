@@ -57,10 +57,14 @@ class KernalsController < ApplicationController
       time_posted: DateTime.now()
     )
     if (params.has_key?(:image))
-      File.open(params[:image]) do |file| ImageUploader.new(@kernal).store!(file) end
+      uploader = ImageUploader.new(@kernal)
+      File.open(params[:image]) do |file| 
+        uplaoder.store!(file) end
     end
     if (params.has_key?(:pdf))
-      File.open(params[:pdf]) do |file| PdfUploader.new(@kernal).store!(file) end
+      uploader = PdfUploader.new(@kernal)
+      File.open(params[:pdf]) do |file| 
+        uploader.store!(file) end
     end
     if params.has_key?(:mixtape) 
       @mixtape.update(content: @mixtape.content.push(@kernal.id))
