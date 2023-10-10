@@ -1,6 +1,6 @@
 class KernalsController < ApplicationController
   before_action :authenticate_user!
-
+  
   # GET
   def index
     @q = params.has_key?(:mixtape) ? Kernal.where(id: Mixtape.find(params[:mixtape]).content) : Kernal
@@ -51,15 +51,16 @@ class KernalsController < ApplicationController
   def create
     uuid = SecureRandom.uuid
     @kernal = Kernal.new(
-      id: uuid,
       file_path: uuid + params[:file_type],
       file_type: params[:file_type],
       time_posted: DateTime.now()
     )
+    @kernal.id = uuid
+    @kernal.save
     if (params.has_key?(:image))
       uploader = ImageUploader.new(@kernal)
       File.open(params[:image]) do |file| 
-        uplaoder.store!(file) end
+        uploader.store!(file) end
     end
     if (params.has_key?(:pdf))
       uploader = PdfUploader.new(@kernal)
@@ -67,6 +68,7 @@ class KernalsController < ApplicationController
         uploader.store!(file) end
     end
     if params.has_key?(:mixtape) 
+      @mixtape = Mixtape.find(params[:mixtape])
       @mixtape.update(content: @mixtape.content.push(@kernal.id))
     end
 

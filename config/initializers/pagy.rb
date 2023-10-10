@@ -2,5 +2,5 @@
 require 'pagy/extras/bulma'
 require 'pagy/extras/array'
 
-Pagy::DEFAULT[:items] = 35
+Pagy::DEFAULT[:items] = 40
 Pagy::DEFAULT.freeze
