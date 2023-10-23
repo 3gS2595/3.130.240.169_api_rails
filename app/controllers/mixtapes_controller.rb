@@ -4,7 +4,7 @@ class MixtapesController < ApplicationController
   # GET /mixtapes
   def index
     @q = Mixtape.ransack(search_params)
-    @q.sorts = params.has_key?(:sort) ? params[:sort] : null 
+    @q.sorts = 'created_at' 
     @pagy, @page = params.has_key?(:page) ? pagy(@q.result) : @q.result 
     render json: @page
   end
