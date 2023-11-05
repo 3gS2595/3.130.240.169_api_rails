@@ -1,0 +1,41 @@
+{
+  "image" : [ 
+    "//*[@id='base-container']/div[2]/div/div[2]/div/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[2]/div/div/button/span/figure/div/img",
+    "//*[@id='base-container']/div[2]/div/div[2]/div/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[1]/button/span/figure/div/img",
+    "//*[@id='base-container']/div[2]/div/div[2]/div/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div/figure/div/img",
+    "//*[@id='base-container']/div[2]/div/div[2]/div/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[2]/div/div[1]/button/span/figure/div/img",
+    "//*[@id='base-container']/div[2]/div/div[2]/div/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[2]/button/span/figure/div/img",
+    "//*[@id='base-container']/div[2]/div/div[2]/div/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[3]/button/span/figure/div/img",
+    "/html/body/div/div/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[2]/div/div[1]/button/span/figure/div/img",
+    "//*[@id='base-container']/div[2]/div/div[2]/div/div/div/div/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[2]/div/div[1]/div/button/span/figure/div/img",
+    "//*[@id='base-container']/div[2]/div/div[2]/div/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div/button/span/figure/div/img",
+    "//*[@id='base-container']/div[2]/div/div[2]/div/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[2]/div/div/button/span/figure/div/img",
+    "//*[@id='base-container']/div[2]/div/div[2]/div/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div[1]/div[2]/div/div/button/span/figure/div/img",
+    "//*[@id='base-container']/div[2]/div/div[2]/div/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[2]/div/div[1]/button/span/figure/div/img[1]",
+    "//*[@id='base-container']/div[2]/div/div[2]/div/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[2]/div/div/div/button/span/figure/div/img[1]",
+    "//*[@id='base-container']/div[2]/div/div[2]/div/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[2]/div/div/div/button/span/figure/div/img[1]",
+    "//*[@id='base-container']/div[2]/div/div[2]/div/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[2]/div/div/div/button/span/figure/div/img[1]",
+    "//*[@id='base-container']/div[2]/div/div[2]/div/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[2]/div/div/button/span/figure/div/img[1]",
+    "//*[@id='base-container']/div[2]/div/div[2]/div/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[2]/div/div/button/span/figure/div/img",
+    "//*[@id='base-container']/div[2]/div/div[2]/div/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[2]/div/div[1]/button/span/figure/div/img[1]"
+  ],
+
+  "text" : [
+    "//*[@id='base-container']/div[2]/div[2]/div/div/div/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div[1]/p",
+    "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div[1]/div[2]/div/div/p",
+    "//*[@id='base-container']/div[2]/div/div[2]/div/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div/p",
+    "//*[@id='base-container']/div[2]/div/div[2]/div/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div/span",
+    "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div/span",
+    "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/article/div[1]/div/span/div/div/h1"
+  ],
+
+  "author" : [
+    "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/header/div/div[1]/div[1]/div/span[1]/a",
+    "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[1]/div[1]/div/div/div/span/div",
+    "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[1]/div[1]/div[2]/div/div/span/span/span/a/div"
+  ],
+
+  "date" : "//*[@id='tumblr']/script[1]",
+  "description" : "//*[@id='base-container']/div[2]/div[2]/div/div/div[1]/main/div/div/div/div[2]/div/div/div/div/article/div[1]/div/span/div/div[2]/p",
+  "hashtags" : "/html/body/div[1]/div/div[2]/div[2]/div/div/div/main/div/div/div/div[2]/div/div/div/article/div[2]/div/div/a"
+}

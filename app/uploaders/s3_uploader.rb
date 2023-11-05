@@ -2,7 +2,7 @@ require './config/environment/'
 
 class S3Uploader
   def initialize(source, nail, source_key, nail_key)
-    print('uploading new key ' + source_key)
+    puts('uploading new key ' + source_key)
     Aws.use_bundled_cert!
     s3client = Aws::S3::Client.new(
       access_key_id: Rails.application.credentials.aws[:access_key_id],

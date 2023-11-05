@@ -1,6 +1,4 @@
 require './config/environment/'
-
-
     Mixtape.delete_all
     def genImageAndThumb(temp_path, save_path, save_name)
       image = MiniMagick::Image.open(temp_path)

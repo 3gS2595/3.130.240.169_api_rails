@@ -12,13 +12,6 @@ gem "pg", "~> 1.1"
 # Use the Puma web server [https://github.com/puma/puma]
 gem "puma", "~> 5.0"
 
-# Build JSON APIs with ease [https://github.com/rails/jbuilder]
-# gem "jbuilder"
-
-# Windows does not include zoneinfo files, so bundle the tzinfo-data gem
-# gem "tzinfo-data", platforms: %i[ mingw mswin x64_mingw jruby ]
-
-
 gem "rack-cors"
 gem "nokogiri"
 gem 'aws-sdk-s3'
@@ -41,18 +34,13 @@ gem 'carrierwave', '~> 1.0'
 gem 'arena'
 gem 'aws-sigv4'
 gem 'pagy'
-# Reduces boot times through caching; required in config/boot.rb
+gem "devise-jwt", "~> 0.11.0"
 gem "bootsnap", require: false
 
-group :development, :test do
-  # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
-  gem "debug", platforms: %i[ mri mingw x64_mingw ]
-end
-
 group :development do
-  # Speed up commands on slow machines / big apps [https://github.com/rails/spring]
-  # gem "spring"
+    gem 'capistrano',         require: false
+    gem 'capistrano-rvm',     require: false
+    gem 'capistrano-rails',   require: false
+    gem 'capistrano-bundler', require: false
+    gem 'capistrano3-puma',   require: false
 end
-
-
-gem "devise-jwt", "~> 0.11.0"

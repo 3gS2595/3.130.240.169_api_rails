@@ -71,6 +71,10 @@ class KernalsController < ApplicationController
       File.open(params[:pdf]) do |file| 
         uploader.store!(file) end
     end
+    if (params.has_key?(:text))
+      @kernal.update_attribute(:description, params[:text])
+    end
+
     if params.has_key?(:mixtape) 
       @mixtape = Mixtape.find(params[:mixtape])
       @mixtape.update(content: @mixtape.content.push(@kernal.id))
