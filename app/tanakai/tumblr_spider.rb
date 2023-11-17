@@ -9,7 +9,7 @@ require "json"
 
 class TumblrSpider < Tanakai::Base
   @start_urls = Hypertext.where(
-    :source_url_id => SourceUrl.find_by!(domain: "tumblr.com").id).drop(1).map{|x| (x.url + "/sitemap1.xml")}
+    :source_url_id => SourceUrl.find_by!(domain: "tumblr.com").id).map{|x| (x.url + "/sitemap1.xml")}
   @name = "tumblr_spider"
   @engine = :selenium_firefox
   @config = {
@@ -19,27 +19,22 @@ class TumblrSpider < Tanakai::Base
 
   def parse(response, url:, data: {})
     @account = Hypertext.find_by!(url:  url = (url.sub! '/sitemap1.xml', ''))
-    if @account.name.include? "7twdi29ot5y8og6ndze7m7wexn29cm24"
 
-      @source_url_id = @account.source_url_id
-      @hypertext_id = @account.id
-      if Kernal.exists?(hypertext_id: @hypertext_id)
-        Kernal.where(hypertext_id: @hypertext_id).delete_all
+    @source_url_id = @account.source_url_id
+    @hypertext_id = @account.id
+    
+    file = File.open "./app/tanakai/xpaths.json"
+    @xpaths = JSON.load file
+
+    response.css("url").drop(1).each do |a|
+      @url = a.css('loc').text
+      if Kernal.exists?(url:@url)
+        puts('KERNAL EXISTS')
+      elsif a.css('loc').text
+        request_to :parse_repo_page, url: absolute_url(a.css("loc").text.sub( /[-0-9+()\\s\\[\\]x]*/, ''), base: url)
       end
-      
-      file = File.open "./app/tanakai/xpaths.json"
-      @xpaths = JSON.load file
-
-      response.css("url").drop(1).each do |a|
-        @url = a.css('loc').text
-        if Kernal.exists?(url:@url)
-          puts('KERNAL EXISTS')
-        elsif a.css('loc').text
-          request_to :parse_repo_page, url: absolute_url(a.css("loc").text.sub( /[-0-9+()\\s\\[\\]x]*/, ''), base: url)
-        end
-      end
-
     end
+
   end
 
   def parse_repo_page(response, url:, data: {})

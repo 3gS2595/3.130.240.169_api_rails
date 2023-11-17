@@ -21,8 +21,8 @@ class KernalsController < ApplicationController
           key = kernal.file_path
           nailKey = kernal.file_path
             if kernal.file_type == ".pdf"
-              key = kernal.file_path + ".pdf"
-              nailKey = kernal.file_path + ".avif"
+              key = kernal.id + ".pdf"
+              nailKey = kernal.id + ".avif"
             end
           url = signer.presign_url(
             http_method: "GET",
@@ -74,11 +74,43 @@ class KernalsController < ApplicationController
     if (params.has_key?(:text))
       @kernal.update_attribute(:description, params[:text])
     end
-
     if params.has_key?(:mixtape) 
+      puts()
+      puts(uuid)
+      puts(params[:mixtape])
+      puts()
       @mixtape = Mixtape.find(params[:mixtape])
       @mixtape.update(content: @mixtape.content.push(@kernal.id))
+      @mixtape.save
     end
+    # presign urls
+    signer = Aws::Sigv4::Signer.new(
+      service: "s3",
+      access_key_id: Rails.application.credentials.aws[:access_key_id],
+      secret_access_key: Rails.application.credentials.aws[:secret_access_key],
+      region: 'us-east-1'
+    )
+      if !@kernal.file_path.nil? && @kernal.file_path.length > 0
+        key = @kernal.file_path
+        nailKey = @kernal.file_path
+          if @kernal.file_type == ".pdf"
+            key = @kernal.id + ".pdf"
+            nailKey = @kernal.id + ".avif"
+          end
+        url = signer.presign_url(
+          http_method: "GET",
+          url: "https://crystal-hair.nyc3.digitaloceanspaces.com/#{key}",
+          expires_in: 600,
+          body_digest: "UNSIGNED-PAYLOAD"
+        )
+        url_nail = signer.presign_url(
+          http_method: "GET",
+          url: "https://crystal-hair-nail.nyc3.digitaloceanspaces.com/nail_#{nailKey}",
+          expires_in: 600,
+          body_digest: "UNSIGNED-PAYLOAD"
+        )
+        @kernal.assign_attributes({ :signed_url => url, :signed_url_nail => url_nail})
+      end
 
     if @kernal.save
       render json: @kernal, status: :created, location: @kernal

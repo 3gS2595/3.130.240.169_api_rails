@@ -16,7 +16,11 @@ class MixtapesController < ApplicationController
 
   # POST /mixtapes
   def create
-    @mixtape = Mixtape.new(mixtape_params)
+    uuid = SecureRandom.uuid
+    @mixtape = Mixtape.new(
+      name: params[:name],
+    )
+    @mixtape.id = uuid
     if @mixtape.save
       render json: @mixtape, status: :created, location: @mixtape
     else
@@ -27,16 +31,18 @@ class MixtapesController < ApplicationController
   # PATCH/PUT /mixtapes/1
   def update
     @mixtape = Mixtape.find(params[:id])
-    if @mixtape.update(mixtape_params)
-      render json: @mixtape
-    else
-      render json: @mixtape.errors, status: :unprocessable_entity
+    if (params.has_key?(:addKernal))
+      @mixtape.update(content: @mixtape.content.push(params[:addKernal]))
     end
+    if (params.has_key?(:remKernal))
+      @mixtape.update(content: @mixtape.content.select! { |el| el != params[:remKernal] })
+    end
+    render json: @mixtape
   end
 
   # DELETE /mixtapes/1
   def destroy
-    @mixtape = mixtape.find(params[:id])
+    @mixtape = Mixtape.find(params[:id])
     @mixtape.destroy
   end
 
@@ -55,6 +61,6 @@ class MixtapesController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def mixtape_params
-      params.permit(:name, :id, :content => [])
+      params.permit(:name, :addKernal, :remKernal, :id, :content => [])
     end
 end
