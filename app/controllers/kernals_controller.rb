@@ -1,10 +1,12 @@
 class KernalsController < ApplicationController
   before_action :authenticate_user!
+require "selenium-webdriver"
   
   # GET
   def index
+    @permited = Kernal.where("permissions @> ARRAY[?]::uuid[]", [current_user.id])
     if !params.has_key?(:forceGraph)
-      @q = params.has_key?(:mixtape) ? Kernal.where(id: Mixtape.find(params[:mixtape]).content) : Kernal
+      @q = params.has_key?(:mixtape) ? @permited.where(id: Mixtape.find(params[:mixtape]).content) : @permited
       @q = @q.ransack(search_params)
       @q.sorts = params.has_key?(:sort) ? params[:sort] : null
       @pagy, @page = params.has_key?(:page) ? pagy(@q.result) : @q.result 
@@ -40,7 +42,9 @@ class KernalsController < ApplicationController
         end
       end
     else
-      @page = params.has_key?(:mixtape) ? Kernal.where(id: Mixtape.find(params[:mixtape]).content) : Kernal.all
+      @q = params.has_key?(:mixtape) ? @permited.where(id: Mixtape.find(params[:mixtape]).content) : @permited
+      @q = @q.ransack(search_params)
+      @page = @q.result 
     end
     render json: @page
   end
@@ -53,11 +57,17 @@ class KernalsController < ApplicationController
 
   # POST /kernals
   def create
+
+
+
+
+
     uuid = SecureRandom.uuid
     @kernal = Kernal.new(
       file_path: uuid + params[:file_type],
       file_type: params[:file_type],
-      time_posted: DateTime.now()
+      time_posted: DateTime.now(),
+      permissions: [current_user.id]
     )
     @kernal.id = uuid
     @kernal.save
@@ -68,6 +78,7 @@ class KernalsController < ApplicationController
     end
     if (params.has_key?(:pdf))
       uploader = PdfUploader.new(@kernal)
+      @kernal.update_attribute(:file_type, ".pdf")
       File.open(params[:pdf]) do |file| 
         uploader.store!(file) end
     end
@@ -75,13 +86,22 @@ class KernalsController < ApplicationController
       @kernal.update_attribute(:description, params[:text])
     end
     if params.has_key?(:mixtape) 
-      puts()
-      puts(uuid)
-      puts(params[:mixtape])
-      puts()
       @mixtape = Mixtape.find(params[:mixtape])
       @mixtape.update(content: @mixtape.content.push(@kernal.id))
       @mixtape.save
+    end
+    if params.has_key?(:url) 
+      puts(params[:url])
+      options = Selenium::WebDriver::Firefox::Options.new(args: ['-headless'])
+      driver = Selenium::WebDriver.for(:firefox, options: options) 
+      driver.navigate.to params[:url]
+       
+      @kernal.update_attribute(:url, params[:url])
+      driver.save_screenshot("selenium.png")
+      driver.quit
+      file = File.open("./selenium.png")
+      uploader = ImageUploader.new(@kernal)
+      uploader.store!(file)
     end
     # presign urls
     signer = Aws::Sigv4::Signer.new(
@@ -139,7 +159,7 @@ class KernalsController < ApplicationController
     def search_params
       qkey = ''
       Kernal.column_names.each do |e|
-        if e != 'size'
+        if e != 'size' && e != 'permissions'
           qkey = qkey + e + '_or_'
         end
       end

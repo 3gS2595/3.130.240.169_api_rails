@@ -3,7 +3,8 @@ class MixtapesController < ApplicationController
 
   # GET /mixtapes
   def index
-    @q = Mixtape.ransack(search_params)
+    @permited = Mixtape.where("permissions @> ARRAY[?]::varchar[]", current_user.id)
+    @q = @permited.ransack(search_params)
     @q.sorts = 'updated_at desc' 
     @pagy, @page = params.has_key?(:page) ? pagy(@q.result) : @q.result 
     render json: @page
@@ -19,6 +20,7 @@ class MixtapesController < ApplicationController
     uuid = SecureRandom.uuid
     @mixtape = Mixtape.new(
       name: params[:name],
+      permissions: [current_user.id]
     )
     @mixtape.id = uuid
     if @mixtape.save
@@ -33,9 +35,10 @@ class MixtapesController < ApplicationController
     @mixtape = Mixtape.find(params[:id])
     if (params.has_key?(:addKernal))
       @mixtape.update(content: @mixtape.content.push(params[:addKernal]))
-    end
-    if (params.has_key?(:remKernal))
+    elsif (params.has_key?(:remKernal))
       @mixtape.update(content: @mixtape.content.select! { |el| el != params[:remKernal] })
+    else
+      @mixtape.update(mixtape_params)
     end
     render json: @mixtape
   end
