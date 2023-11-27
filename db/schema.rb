@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_11_17_191851) do
+ActiveRecord::Schema[7.0].define(version: 2023_11_27_013007) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -80,10 +80,12 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_17_191851) do
     t.string "likes"
     t.string "reposts"
     t.string "signed_url"
-    t.string "signed_url_nail"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.uuid "permissions", default: [], array: true
+    t.string "permissions", default: [], array: true
+    t.string "signed_url_s"
+    t.string "signed_url_m"
+    t.string "signed_url_l"
   end
 
   create_table "link_contents", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|

@@ -71,13 +71,21 @@ class TumblrSpider < Tanakai::Base
         if file_type != '.gifv' 
           image.format ".avif"
           image.write "#{save_path}/#{uuid}.avif"
-          image.resize "100x100"
-          image.write "#{save_path}/nail/#{uuid}.avif"
+          image.resize "1000x1000"
+          image.write "#{save_path}/nail/l_1000_#{uuid}.avif"
+          image.resize "400x400"
+          image.write "#{save_path}/nail/m_400_#{uuid}.avif"
+          image.resize "160x160"
+          image.write "#{save_path}/nail/s_160_#{uuid}.avif"
           file_path = uuid + ".avif"
         else
           image.write "#{save_path}/#{uuid}.gifv"
-          image.resize "100x100"
-          image.write "#{save_path}/nail/#{uuid}.gifv"
+          image.resize "1000x1000"
+          image.write "#{save_path}/nail/l_1000_#{uuid}.gifv"
+          image.resize "400x400"
+          image.write "#{save_path}/nail/m_400_#{uuid}.gifv"
+          image.resize "160x160"
+          image.write "#{save_path}/nail/s_160_#{uuid}.gifv"
           file_path = uuid + ".gifv"
         end
       end
@@ -114,9 +122,10 @@ class TumblrSpider < Tanakai::Base
         if !img_html.nil? && text.length == 0
           S3Uploader.new(
             File.read("#{save_path}/#{file_path}"), 
-            File.read("#{save_path}/nail/#{file_path}"), 
+            File.read("#{save_path}/nail/l_1000_#{file_path}"), 
+            File.read("#{save_path}/nail/m_400_#{file_path}"), 
+            File.read("#{save_path}/nail/s_160_#{file_path}"), 
             file_path, 
-            'nail_' + file_path
           )
           File.delete(tempfile.path)
           File.delete("#{save_path}/nail/#{file_path}")

@@ -1,7 +1,7 @@
 require './config/environment/'
 
 class S3Uploader
-  def initialize(source, nail, source_key, nail_key)
+  def initialize(source, s, m, l, source_key)
     puts('uploading new key ' + source_key)
     Aws.use_bundled_cert!
     s3client = Aws::S3::Client.new(
@@ -18,9 +18,21 @@ class S3Uploader
       acl: "private"
     })
     s3client.put_object({
-      bucket: "crystal-hair-nail",
-      key: nail_key,
-      body: nail,
+      bucket: "crystal-hair-s",
+      key: "s_160_" + source_key,
+      body: s,
+      acl: "private"
+    })
+    s3client.put_object({
+      bucket: "crystal-hair-m",
+      key: "m_400_" + source_key,
+      body: m,
+      acl: "private"
+    })
+    s3client.put_object({
+      bucket: "crystal-hair-l",
+      key: "l_1000_" + source_key,
+      body: l,
       acl: "private"
     })
   end
