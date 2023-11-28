@@ -2,7 +2,7 @@ http://3.130.240.169
 =======
 Rails RESTful API & Tanakai Spiders on Sidekiq/Redis.
 -----------
-![Site Screenshot](https://raw.githubusercontent.com/3gS2595/crystal.hair-frontend-vuejs/main/public/sitedemo.gif)
+![Site Screenshot](https://crystal-hair.nyc3.cdn.digitaloceanspaces.com/sitedemo.gif)
 
 - <strong>API</strong>: Ruby, Rails, PostgreSQL, Devise, Pagy, Ransack, Carrierwave-AWS, MiniMagic, AWS-Sigv4, Nginx, AWS-EC2, DigitalOcean-AWS-S3
 - <strong>REDIS</strong>: Ruby, Active Record, PostgreSQL, Tanakai, Selenium_firefox, Arena-rb, MiniMagic, Redis, Sidekiq-Scheduler
