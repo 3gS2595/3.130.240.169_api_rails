@@ -17,3 +17,8 @@ Rails RESTful API & Tanakai Spiders on Sidekiq/Redis.
 - Scrapes individual Tumbler and Are.na users for links, texts, images, and PDF’s.
 - Scrapes publication and gallery websites for articles, urls, and images.
 - Generates and uploads .AVIF source sets to S3 style buckets using AWS-SDK-S3.
+
+## PostgreSQL
+<img src="https://crystal-hair.nyc3.cdn.digitaloceanspaces.com/dbdesigns.png" width="887" >
+
+
