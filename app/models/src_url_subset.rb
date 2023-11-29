@@ -1,0 +1,2 @@
+class SrcUrlSubset < ApplicationRecord
+end

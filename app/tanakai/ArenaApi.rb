@@ -83,7 +83,7 @@ while channels.length > 0
         name: channelName,
         created_at: chAttr.created_at,
         updated_at: chAttr.updated_at,
-        permissions: ["c611ad6c-4826-48bb-98fe-cada1158e3ce"]
+        permissions: ["01f7aea6-dea7-4956-ad51-6dae41e705ca"]
       )
     end
 
@@ -124,7 +124,7 @@ while channels.length > 0
               updated_at: a.updated_at,
               key_words: "are.na",
               author: a.user.username,
-              permissions: ["c611ad6c-4826-48bb-98fe-cada1158e3ce"]
+              permissions: ["01f7aea6-dea7-4956-ad51-6dae41e705ca"]
             )
             cleanup(tempfile.path)
             @mixtape.update(content: @mixtape.content.push(@link.id)) 
@@ -161,7 +161,7 @@ while channels.length > 0
               updated_at: a.updated_at,
               key_words: "are.na",
               author: a.user.username,
-              permissions: ["c611ad6c-4826-48bb-98fe-cada1158e3ce"]
+              permissions: ["01f7aea6-dea7-4956-ad51-6dae41e705ca"]
             )
             File.delete(temppdf.path)
             cleanup(tempfile.path)
@@ -198,7 +198,7 @@ while channels.length > 0
               updated_at: a.updated_at,
               key_words: "are.na",
               author: a.user.username,
-              permissions: ["c611ad6c-4826-48bb-98fe-cada1158e3ce"]
+              permissions: ["01f7aea6-dea7-4956-ad51-6dae41e705ca"]
             )
             cleanup(tempfile.path)
             @mixtape.update(content: @mixtape.content.push(@link.id)) 
@@ -219,7 +219,7 @@ while channels.length > 0
               updated_at: a.updated_at,
               key_words: "are.na",
               author: a.user.username,
-              permissions: ["c611ad6c-4826-48bb-98fe-cada1158e3ce"]
+              permissions: ["01f7aea6-dea7-4956-ad51-6dae41e705ca"]
             )
             @mixtape.update(content: @mixtape.content.push(@link.id))
           elsif !@mixtape.content.include? Kernal.find_by(description: a.content).id

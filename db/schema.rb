@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_11_27_013007) do
+ActiveRecord::Schema[7.0].define(version: 2023_11_29_201824) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -43,18 +43,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_27_013007) do
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
   end
 
-  create_table "hypertexts", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
-    t.uuid "source_url_id"
-    t.string "url"
-    t.string "name"
-    t.integer "scrape_interval"
-    t.datetime "time_last_scrape"
-    t.datetime "time_initial_scrape"
-    t.string "logo_path"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-  end
-
   create_table "jwt_denylist", force: :cascade do |t|
     t.string "jti", null: false
     t.datetime "exp", null: false
@@ -80,22 +68,10 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_27_013007) do
     t.string "likes"
     t.string "reposts"
     t.string "signed_url"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.string "permissions", default: [], array: true
     t.string "signed_url_s"
     t.string "signed_url_m"
     t.string "signed_url_l"
-  end
-
-  create_table "link_contents", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
-    t.uuid "source_url_id"
-    t.string "names"
-    t.string "url"
-    t.datetime "post_date"
-    t.integer "word_count"
-    t.string "author"
-    t.string "text_body"
+    t.string "permissions", default: [], array: true
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
@@ -103,16 +79,26 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_27_013007) do
   create_table "mixtapes", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "name"
     t.string "content", default: [], array: true
+    t.string "permissions", default: [], array: true
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.string "permissions", default: [], array: true
   end
 
-  create_table "source_urls", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
-    t.string "domain"
-    t.string "tag_list"
-    t.string "source"
-    t.string "logo_path"
+  create_table "src_url_subsets", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "src_url_id"
+    t.string "url"
+    t.string "name"
+    t.integer "scrape_interval"
+    t.datetime "time_last_scraped", precision: nil
+    t.string "permissions", default: [], array: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "src_urls", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "name"
+    t.string "url"
+    t.string "permissions", default: [], array: true
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end

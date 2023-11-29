@@ -17,7 +17,11 @@ class CreateKernals < ActiveRecord::Migration[7.0]
       t.string :likes
       t.string :reposts
       t.string :signed_url
-      t.string :signed_url_nail
+      t.string :signed_url_s
+      t.string :signed_url_m
+      t.string :signed_url_l
+      t.string :permissions, array: true, default: []
+
       t.timestamps
     end
   end
