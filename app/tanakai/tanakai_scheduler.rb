@@ -1,11 +1,11 @@
-# tanakai_scheduler.rb
-require 'sidekiq-scheduler'
 require './config/environment/'
+require 'sidekiq-scheduler'
+require 'tanakai'
 
 class TanakaiScheduler 
   include Sidekiq::Worker
 
   def perform
-    spider = TumblrSpider
+    TumblrSpider.crawl!
   end
 end

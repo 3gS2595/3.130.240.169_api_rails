@@ -1,5 +1,8 @@
 scheduler:
+  :dynamic: true
+  :rufus_scheduler_options: 
+    max_work_threads: 1
   :schedule:
     tanakai_scheduler:
-      every: 10m   # Runs once per minute
+      every: ['40s', first_in: '20m']
       class: TanakaiScheduler 

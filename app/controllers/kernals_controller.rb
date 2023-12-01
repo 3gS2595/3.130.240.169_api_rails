@@ -6,27 +6,35 @@ class KernalsController < ApplicationController
   def index
     @q = Kernal.where("permissions @> ARRAY[?]::varchar[]", [current_user.id])
     if !params.has_key?(:forceGraph)
+
       if (!params.has_key?(:src_url_subset_id))
         if params.has_key?(:mixtape)
+          # fetch specific mixtape's kernals
           @q = @q.where(id: Mixtape.find(params[:mixtape]).content)
         else
+          # fetch kernals in any mixtape
           mixedKernals = []
           Mixtape.all.each do |mix|
             mixedKernals.concat(mix.content)
           end
           @q = @q.where(id: mixedKernals)
         end
+
       else 
         if(params[:src_url_subset_id] == "-1")
+          #fetch kernals absent from any mixtape
           mixedKernals = []
           Mixtape.all.each do |mix|
             mixedKernals.concat(mix.content)
           end
           @q = @q.where.not(id: mixedKernals)
         else
+          # fetch specific src_url_subset's kernals 
           @q = @q.where(src_url_subset_id: params[:src_url_subset_id])
         end
       end
+
+      # search, sorts, paginates selected kernals
       @q = @q.ransack(search_params)
       @q.sorts = params.has_key?(:sort) ? params[:sort] : null
       @pagy, @page = params.has_key?(:page) ? pagy(@q.result) : @q.result 
@@ -81,6 +89,7 @@ class KernalsController < ApplicationController
         end
       end
     else
+      # fetches forceGraph data
       @q = params.has_key?(:mixtape) ? @q.where(id: Mixtape.find(params[:mixtape]).content) : @q
       @q = @q.ransack(search_params)
       @page = @q.result 

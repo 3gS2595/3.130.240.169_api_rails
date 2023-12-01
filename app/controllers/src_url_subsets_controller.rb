@@ -1,6 +1,7 @@
 class SrcUrlSubsetsController < ApplicationController
-  before_action :set_src_url_subset, only: %i[ show update destroy ]
-
+  before_action :authenticate_user!
+  require 'sidekiq-scheduler'
+  
   # GET /src_url_subsets
   def index
     @src_url_subsets = SrcUrlSubset.all
@@ -15,9 +16,18 @@ class SrcUrlSubsetsController < ApplicationController
 
   # POST /src_url_subsets
   def create
-    @src_url_subset = SrcUrlSubset.new(src_url_subset_params)
+    uuid = SecureRandom.uuid
+    @src_url_subset = SrcUrlSubset.new(
+      name: params[:name],
+      url: params[:url],
+      src_url_id: params[:src_url_id],
+      scrape_interval: params[:scrape_interval],
 
+      permissions: [current_user.id]
+    )
+    @src_url_subset.id = uuid
     if @src_url_subset.save
+      Sidekiq.set_schedule(params[:name], { 'in' => ['2s'], 'class' => 'TanakaiScheduler' })
       render json: @src_url_subset, status: :created, location: @src_url_subset
     else
       render json: @src_url_subset.errors, status: :unprocessable_entity
