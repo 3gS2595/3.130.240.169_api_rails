@@ -4,9 +4,29 @@ class KernalsController < ApplicationController
   
   # GET
   def index
-    @permited = Kernal.where("permissions @> ARRAY[?]::varchar[]", [current_user.id])
+    @q = Kernal.where("permissions @> ARRAY[?]::varchar[]", [current_user.id])
     if !params.has_key?(:forceGraph)
-      @q = params.has_key?(:mixtape) ? @permited.where(id: Mixtape.find(params[:mixtape]).content) : @permited
+      if (!params.has_key?(:src_url_subset_id))
+        if params.has_key?(:mixtape)
+          @q = @q.where(id: Mixtape.find(params[:mixtape]).content)
+        else
+          mixedKernals = []
+          Mixtape.all.each do |mix|
+            mixedKernals.concat(mix.content)
+          end
+          @q = @q.where(id: mixedKernals)
+        end
+      else 
+        if(params[:src_url_subset_id] == "-1")
+          mixedKernals = []
+          Mixtape.all.each do |mix|
+            mixedKernals.concat(mix.content)
+          end
+          @q = @q.where.not(id: mixedKernals)
+        else
+          @q = @q.where(src_url_subset_id: params[:src_url_subset_id])
+        end
+      end
       @q = @q.ransack(search_params)
       @q.sorts = params.has_key?(:sort) ? params[:sort] : null
       @pagy, @page = params.has_key?(:page) ? pagy(@q.result) : @q.result 
@@ -61,7 +81,7 @@ class KernalsController < ApplicationController
         end
       end
     else
-      @q = params.has_key?(:mixtape) ? @permited.where(id: Mixtape.find(params[:mixtape]).content) : @permited
+      @q = params.has_key?(:mixtape) ? @q.where(id: Mixtape.find(params[:mixtape]).content) : @q
       @q = @q.ransack(search_params)
       @page = @q.result 
     end
@@ -203,6 +223,30 @@ class KernalsController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def kernal_params
-      params.permit(:image, :forceGraph, :mixtape, :hypertext_id, :source_url_id, :signed_url, :signed_url_m, :signed_url_s, :signed_url_l, :file_type, :file_name, :file_path, :url, :size, :author, :time_posted, :time_scraped, :description, :key_words, :hashtags, :likes, :reposts)
+      params.permit(
+        :image, 
+        :forceGraph, 
+        :src_url_subset_id, 
+        :mixtape, 
+        :hypertext_id, 
+        :source_url_id, 
+        :signed_url, 
+        :signed_url_m, 
+        :signed_url_s, 
+        :signed_url_l, 
+        :file_type, 
+        :file_name, 
+        :file_path, 
+        :url, 
+        :size, 
+        :author, 
+        :time_posted, 
+        :time_scraped, 
+        :description, 
+        :key_words, 
+        :hashtags, 
+        :likes, 
+        :reposts
+      )
     end
 end

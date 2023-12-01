@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_11_29_201824) do
+ActiveRecord::Schema[7.0].define(version: 2023_11_30_211424) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -52,8 +52,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_29_201824) do
   end
 
   create_table "kernals", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
-    t.uuid "source_url_id"
-    t.uuid "hypertext_id"
+    t.uuid "src_url_id"
+    t.uuid "src_url_subset_id"
     t.string "file_type"
     t.string "file_name"
     t.string "file_path"

@@ -8,8 +8,8 @@ require 'date'
 require "json"
 
 class TumblrSpider < Tanakai::Base
-  @start_urls = Hypertext.where(
-    :source_url_id => SourceUrl.find_by!(domain: "tumblr.com").id).map{|x| (x.url + "/sitemap1.xml")}
+  @start_urls = SrcUrlSubset.where(
+    :src_url_id => SrcUrl.find_by!(name: "tumblr").id).map{|x| (x.url + "/sitemap1.xml")}
   @name = "tumblr_spider"
   @engine = :selenium_firefox
   @config = {
@@ -18,9 +18,9 @@ class TumblrSpider < Tanakai::Base
   }
 
   def parse(response, url:, data: {})
-    @account = Hypertext.find_by!(url:  url = (url.sub! '/sitemap1.xml', ''))
+    @account = SrcUrlSubset.find_by!(url:  url = (url.sub! '/sitemap1.xml', ''))
 
-    @source_url_id = @account.source_url_id
+    @source_url_id = @account.src_url_id
     @hypertext_id = @account.id
     
     file = File.open "./app/tanakai/xpaths.json"
@@ -122,17 +122,19 @@ class TumblrSpider < Tanakai::Base
         if !img_html.nil? && text.length == 0
           S3Uploader.new(
             File.read("#{save_path}/#{file_path}"), 
-            File.read("#{save_path}/nail/l_1000_#{file_path}"), 
-            File.read("#{save_path}/nail/m_400_#{file_path}"), 
             File.read("#{save_path}/nail/s_160_#{file_path}"), 
+            File.read("#{save_path}/nail/m_400_#{file_path}"), 
+            File.read("#{save_path}/nail/l_1000_#{file_path}"), 
             file_path, 
           )
           File.delete(tempfile.path)
-          File.delete("#{save_path}/nail/#{file_path}")
+          File.delete("#{save_path}/nail/s_160_#{file_path}")
+          File.delete("#{save_path}/nail/m_400_#{file_path}")
+          File.delete("#{save_path}/nail/l_1000_#{file_path}")
         end
         @link = Kernal.create(
-          source_url_id:@source_url_id,
-          hypertext_id:@hypertext_id,
+          src_url_id:@source_url_id,
+          src_url_subset_id:@hypertext_id,
           file_path:file_path,
           file_name:file_name,
           file_type:file_type,
@@ -141,7 +143,8 @@ class TumblrSpider < Tanakai::Base
           hashtags:hashtags,
           author:author,
           url:url,
-          time_posted: time_posted
+          time_posted: time_posted,
+          permissions: ["01f7aea6-dea7-4956-ad51-6dae41e705ca"]
         )
         puts('kernal absent')
         puts('source_url_id: ' + @source_url_id)
