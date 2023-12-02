@@ -11,9 +11,9 @@ class TumblrSpider < Tanakai::Base
   def self.open_spider
     puts("> Starting...")
     @start_urls = SrcUrlSubset.where(
-      :src_url_id => SrcUrl.find_by!(name: "tumblr").id).map{|x| (x.url + "/sitemap1.xml")}
+      :src_url_id => SrcUrl.find_by!(name: "tumblr").id).map{|x| (x.url + "/sitemap.xml")}
     @name = "tumblr_spider"
-    @engine = :selenium_firefox
+    @engine = :selenium_chrome
     @config = {
       before_request: { delay: 0..1 },
       user_agent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.84 Safari/537.36"
@@ -21,22 +21,36 @@ class TumblrSpider < Tanakai::Base
   end
 
   def parse(response, url:, data: {})
-    @account = SrcUrlSubset.find_by!(url:  url = (url.sub! '/sitemap1.xml', ''))
+    response.css("sitemap").each do |a|
+      if a.css('loc').text
+        request_to :parse_sitemap_page, url: absolute_url(a.css("loc").text.sub( /[-0-9+()\\s\\[\\]x]*/, ''), base: url)
+      end
+    end
+  end
 
+  def parse_sitemap_page(response, url:, data: {})
+    @account = SrcUrlSubset.find_by!(url:  url = (url.split("/sitemap").first))
     @source_url_id = @account.src_url_id
     @hypertext_id = @account.id
     
     file = File.open "./app/tanakai/xpaths.json"
     @xpaths = JSON.load file
 
-    response.css("url").drop(1).each do |a|
+    print("START")
+    urlCnt = 0
+    urlCntNew = 0
+    response.css("url").each do |a|
       @url = a.css('loc').text
-      if Kernal.exists?(url:@url)
-        puts('KERNAL EXISTS')
-      elsif a.css('loc').text
-        request_to :parse_repo_page, url: absolute_url(a.css("loc").text.sub( /[-0-9+()\\s\\[\\]x]*/, ''), base: url)
+      urlCnt = urlCnt + 1
+      if Kernal.exists?(url: absolute_url(a.css("loc").text, base: url))
+        print('.')
+      elsif !@xpaths['blackListedUrls'].include?(a.css('loc').text)
+        print("\n")
+        urlCntNew = urlCntNew + 1
+        request_to :parse_repo_page, url: absolute_url(a.css("loc").text, base: url)
       end
     end
+    puts("\nDONE\ncnt:" + urlCnt.to_s + "\nnew:" + urlCntNew.to_s + "\n\n")
 
   end
 
@@ -64,6 +78,7 @@ class TumblrSpider < Tanakai::Base
       # IMAGE FILE
       if !img_html.nil?
         url_path = img_html.attr('srcset').text.scan(/\bhttps?:\/\/[^\s]+\.(?:jpg|gif|png|pnj|gifv)\b/).last
+        puts(url_path)
         tempfile = Down.download(url_path)
         save_path = "/home/ubuntu"
         file_type = File.extname(tempfile.path)
@@ -74,11 +89,11 @@ class TumblrSpider < Tanakai::Base
         if file_type != '.gifv' 
           image.format ".avif"
           image.write "#{save_path}/#{uuid}.avif"
-          image.resize "1000x1000"
+          image.resize "1000x1000" if (image['width'] > 1000) 
           image.write "#{save_path}/nail/l_1000_#{uuid}.avif"
-          image.resize "400x400"
+          image.resize "400x400"  if (image['width'] > 400) 
           image.write "#{save_path}/nail/m_400_#{uuid}.avif"
-          image.resize "160x160"
+          image.resize "160x160"  if (image['width'] > 160)
           image.write "#{save_path}/nail/s_160_#{uuid}.avif"
           file_path = uuid + ".avif"
         else
@@ -122,7 +137,8 @@ class TumblrSpider < Tanakai::Base
 
       # API POST
       if !Kernal.exists?(url: url)
-        if !img_html.nil? && text.length == 0
+        if !img_html.nil?
+        puts(url_path)
           S3Uploader.new(
             File.read("#{save_path}/#{file_path}"), 
             File.read("#{save_path}/nail/s_160_#{file_path}"), 
@@ -130,10 +146,9 @@ class TumblrSpider < Tanakai::Base
             File.read("#{save_path}/nail/l_1000_#{file_path}"), 
             file_path, 
           )
-          File.delete(tempfile.path)
-          File.delete("#{save_path}/nail/s_160_#{file_path}")
-          File.delete("#{save_path}/nail/m_400_#{file_path}")
-          File.delete("#{save_path}/nail/l_1000_#{file_path}")
+          File.delete(tempfile)
+          Dir.glob("/home/ubuntu/*.avif").map do |f| File.delete(f) end
+          Dir.glob("/home/ubuntu/*.gifv").map do |f| File.delete(f) end
         end
         @link = Kernal.create(
           src_url_id:@source_url_id,
@@ -153,6 +168,8 @@ class TumblrSpider < Tanakai::Base
         puts('source_url_id: ' + @source_url_id)
         puts("url= " + url)
         puts(time_posted)
+
+
       end
     end
   end

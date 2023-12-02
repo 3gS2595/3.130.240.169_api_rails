@@ -3,9 +3,11 @@ class SrcUrlsController < ApplicationController
 
   # GET /src_urls
   def index
-    @src_urls = SrcUrl.all
-
-    render json: @src_urls
+    @permited = SrcUrl.where("permissions @> ARRAY[?]::varchar[]", current_user.id)
+    @q = @permited.ransack(search_params)
+    @q.sorts = 'updated_at desc' 
+    @pagy, @page = params.has_key?(:page) ? pagy(@q.result) : @q.result 
+    render json: @page
   end
 
   # GET /src_urls/1
@@ -39,6 +41,12 @@ class SrcUrlsController < ApplicationController
   end
 
   private
+    def search_params
+      qkey = ''
+      SrcUrl.column_names.each { |e| qkey = qkey + e + '_or_' }
+      qkey =  qkey.chomp('_or_') + '_i_cont_any'
+      default_params = {qkey => params[:q]}
+    end
     # Use callbacks to share common setup or constraints between actions.
     def set_src_url
       @src_url = SrcUrl.find(params[:id])

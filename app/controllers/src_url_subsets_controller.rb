@@ -1,6 +1,5 @@
 class SrcUrlSubsetsController < ApplicationController
   before_action :authenticate_user!
-  require 'sidekiq-scheduler'
   
   # GET /src_url_subsets
   def index
@@ -20,11 +19,18 @@ class SrcUrlSubsetsController < ApplicationController
     @src_url_subset = SrcUrlSubset.new(
       name: params[:name],
       url: params[:url],
-      src_url_id: params[:src_url_id],
       scrape_interval: params[:scrape_interval],
-
       permissions: [current_user.id]
     )
+    if (params.has_key?(:src_url_id))
+      @src_url_subset.src_url_id = params[:src_url_id]
+    else
+      domain = /^(?:https?:\/\/)?(?:[^@\/\n]+@)?(?:www\.)?([^:\/?\n]+)/.match(params[:url])[1]
+      @src_url_subset.src_url_id = SrcUrl.where(url: domain).first.id
+
+    end
+
+
     @src_url_subset.id = uuid
     if @src_url_subset.save
       Sidekiq.set_schedule(params[:name], { 'in' => ['2s'], 'class' => 'TanakaiScheduler' })

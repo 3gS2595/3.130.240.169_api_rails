@@ -4,11 +4,7 @@ module RansackHelper
   included do
     Kernal.column_names.each do |e|
       ransacker e do
-        if e != 'size'
-          Arel.sql("\"#{table_name}\".\"#{e}\"::varchar")
-        else
-          Arel.sql("\"#{table_name}\".\"#{e}\"::float")
-        end
+        Arel.sql("\"#{table_name}\".\"#{e}\"::varchar")
       end
     end
   
@@ -29,6 +25,5 @@ module RansackHelper
         Arel.sql("\"#{table_name}\".\"#{e}\"::varchar")
       end
     end
-
   end
 end

@@ -36,7 +36,7 @@ class KernalsController < ApplicationController
 
       # search, sorts, paginates selected kernals
       @q = @q.ransack(search_params)
-      @q.sorts = params.has_key?(:sort) ? params[:sort] : null
+      @q.sorts = params.has_key?(:sort) ? params[:sort] : 'time_posted desc'
       @pagy, @page = params.has_key?(:page) ? pagy(@q.result) : @q.result 
    
       # presign urls

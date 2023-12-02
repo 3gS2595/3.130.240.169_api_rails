@@ -4,5 +4,5 @@ scheduler:
     max_work_threads: 1
   :schedule:
     tanakai_scheduler:
-      every: ['40s', first_in: '20m']
+      every: ['30m', first_in: '1s']
       class: TanakaiScheduler 
