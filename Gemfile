@@ -33,6 +33,7 @@ gem 'carrierwave-aws'
 gem 'carrierwave', '~> 1.0'
 gem 'arena'
 gem 'aws-sigv4'
+gem 'colorize', '~> 1.1'
 gem 'pagy'
 gem "devise-jwt", "~> 0.11.0"
 gem "bootsnap", require: false

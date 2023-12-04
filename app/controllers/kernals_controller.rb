@@ -4,7 +4,7 @@ class KernalsController < ApplicationController
   
   # GET
   def index
-    @q = Kernal.where("permissions @> ARRAY[?]::varchar[]", [current_user.id])
+    @q = Kernal.order(time_posted: :desc).where("permissions @> ARRAY[?]::varchar[]", [current_user.id])
     if !params.has_key?(:forceGraph)
 
       if (!params.has_key?(:src_url_subset_id))
@@ -32,12 +32,11 @@ class KernalsController < ApplicationController
           # fetch specific src_url_subset's kernals 
           @q = @q.where(src_url_subset_id: params[:src_url_subset_id])
         end
-      end
+      end; nil
 
       # search, sorts, paginates selected kernals
-      @q = @q.ransack(search_params)
-      @q.sorts = params.has_key?(:sort) ? params[:sort] : 'time_posted desc'
-      @pagy, @page = params.has_key?(:page) ? pagy(@q.result) : @q.result 
+      @q.order('created_at DESC')
+      @pagy, @page = params.has_key?(:page) ? pagy(@q) : @q 
    
       # presign urls
       signer = Aws::Sigv4::Signer.new(
@@ -47,7 +46,7 @@ class KernalsController < ApplicationController
         region: 'us-east-1'
       )
       @page.each do |kernal|
-        if !kernal.file_path.nil? && kernal.file_path.length > 0
+        if !kernal.file_path.nil? && kernal.file_path.length > 0  && kernal.signed_url.nil?
           key = kernal.file_path
           nailKey = kernal.file_path
 
@@ -90,10 +89,19 @@ class KernalsController < ApplicationController
       end
     else
       # fetches forceGraph data
-      @q = params.has_key?(:mixtape) ? @q.where(id: Mixtape.find(params[:mixtape]).content) : @q
-      @q = @q.ransack(search_params)
-      @page = @q.result 
-    end
+      if params.has_key?(:mixtape)
+        # fetch specific mixtape's kernals
+        @q = @q.where(id: Mixtape.find(params[:mixtape]).content)
+      else
+        # fetch kernals in any mixtape
+        mixedKernals = []
+        Mixtape.all.each do |mix|
+          mixedKernals.concat(mix.content)
+        end
+        @q = @q.where(id: mixedKernals)
+      end
+      @page = @q 
+    end; nil
     render json: @page
   end
 
@@ -115,9 +123,15 @@ class KernalsController < ApplicationController
     @kernal.id = uuid
     @kernal.save
     if (params.has_key?(:image))
-      uploader = ImageUploader.new(@kernal)
       File.open(params[:image]) do |file| 
-        uploader.store!(file) end
+        if (params[:image].original_filename.include?("gif"))
+            uploader = GifUploader.new(@kernal)
+            uploader.store!(file) 
+          else
+            uploader = ImageUploader.new(@kernal)
+            uploader.store!(file) 
+          end
+      end
     end
     if (params.has_key?(:pdf))
       uploader = PdfUploader.new(@kernal)
