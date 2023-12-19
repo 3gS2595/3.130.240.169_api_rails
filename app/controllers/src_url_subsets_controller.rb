@@ -3,9 +3,11 @@ class SrcUrlSubsetsController < ApplicationController
   
   # GET /src_url_subsets
   def index
-    @src_url_subsets = SrcUrlSubset.all
-
-    render json: @src_url_subsets
+    @permited = SrcUrlSubset.where("permissions @> ARRAY[?]::varchar[]", [current_user.id])
+    @q = @permited.ransack(search_params)
+    @q.sorts = 'updated_at desc' 
+    @pagy, @page = params.has_key?(:page) ? pagy(@q.result) : @q.result 
+    render json: @page
   end
 
   # GET /src_url_subsets/1
@@ -55,6 +57,12 @@ class SrcUrlSubsetsController < ApplicationController
   end
 
   private
+    def search_params
+      qkey = ''
+      Mixtape.column_names.each { |e| qkey = qkey + e + '_or_' }
+      qkey =  qkey.chomp('_or_') + '_i_cont_any'
+      default_params = {qkey => params[:q]}
+    end
     # Use callbacks to share common setup or constraints between actions.
     def set_src_url_subset
       @src_url_subset = SrcUrlSubset.find(params[:id])

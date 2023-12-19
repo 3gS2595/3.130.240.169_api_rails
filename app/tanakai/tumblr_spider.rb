@@ -9,154 +9,176 @@ require 'json'
 require 'colorized_string'
 
 class TumblrSpider < Tanakai::Base
-  @@sitemapCnt = 0
-  @@sitemaps = 0
-
   def self.open_spider
-    puts("> Starting...")
-    @start_urls = SrcUrlSubset.where(
-      :src_url_id => SrcUrl.find_by!(name: "tumblr").id).map{|x| (x.url + "/sitemap.xml")}
+    puts("> Starting Spider...")
     @name = "tumblr_spider"
     @engine = :selenium_chrome
+    @start_urls = (SrcUrlSubset.where(:src_url_id => SrcUrl.find_by!(name: "tumblr").id).map{|x| (x.url + "/sitemap.xml")}).reverse
     @config = {
-      before_request: { delay: 0..0 },
-      user_agent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.84 Safari/537.36"
+      before_request: { delay: 1..2 },
     }
+    @@siteCnt = 0
+    @@sites = @start_urls.length()
+    @@mapHash = Hash.new {|h,k| h[k]=[]}
+    file = File.open "./app/tanakai/xpaths.json"
+    @@xpaths = JSON.load file
     puts("\n\n")
   end
 
   def parse(response, url:, data: {})
     @@sitemapCnt = 0
-    @@sitemaps = response.css("sitemap").length()
+    @@siteCnt = @@siteCnt + 1
+    urls = Array.new
     response.css("sitemap").reverse.each do |a|
-      if a.css('loc').text 
+      if  a.css('loc').text && !a.css('loc').text.include?('pootee') && !a.css('loc').text.include?('sitemap-pages') 
         @@sitemapCnt = @@sitemapCnt + 1
-        request_to :parse_sitemap_page, url: absolute_url(a.css("loc").text.sub( /[-0-9+()\\s\\[\\]x]*/, ''), base: url)
+        urls << absolute_url(a.css("loc").text.sub( /[-0-9+()\\s\\[\\]x]*/, ''), base: url) 
+        @@mapHash[url] << absolute_url(a.css("loc").text.sub( /[-0-9+()\\s\\[\\]x]*/, ''), base: url)
       end
     end
-  end
 
-  def parse_sitemap_page(response, url:, data: {})
-    stripped = url.split("/sitemap")[0]
-    @account = SrcUrlSubset.find_by!(url:  stripped)
-    @source_url_id = @account.src_url_id
-    @hypertext_id = @account.id
-    
-    file = File.open "./app/tanakai/xpaths.json"
-    @xpaths = JSON.load file
-
-    print("START")
-    urlCnt = 0
-    urlCntNew = 0
-    response.css("url").drop(1).each do |a|
-      @url = a.css('loc').text
-      urlCnt = urlCnt + 1
-      if Kernal.exists?(url: absolute_url(a.css("loc").text, base: url))
-        print('.')
-      else
-        print("\n")
-        urlCntNew = urlCntNew + 1
-        begin
-          print ColorizedString[@@sitemapCnt.to_s].colorize(:light_yellow)
-          print ("/" + @@sitemaps.to_s)
-          print ColorizedString[" " + urlCnt.to_s].colorize(:light_yellow)
-          puts ("/" + response.css("url").drop(1).length().to_s)
-          request_to :parse_repo_page, url: absolute_url(a.css("loc").text, base: url)
-        rescue => e
-          puts(e)
-          puts("IMG DOWNLOAD/KERNAL CREATION ERROR AT " + url) 
+    puts ColorizedString[@@siteCnt.to_s + " / " + @@sites.to_s].colorize(:light_yellow)
+    if @@siteCnt == @@sites 
+      maps = Hash.new {|h,k| h[k]=[]}
+      @@mapHash.each do |m|
+        level = 0
+        m[1].each do |ur|
+          maps[level] << ur
+          level = level + 1
+        end
+      end
+      maps.each do |aa|
+        puts("---------------")
+        puts(aa[1].reverse)
+        aa[1].reverse.each do |sc|
+          begin
+            request_to :parse_sitemap_page, url: sc
+          rescue => e
+            puts(e)
+            puts("SITEMAP SCAN ERROR " + sc) 
+          end
         end
       end
     end
+  end
+
+
+  def parse_sitemap_page(response, url:, data: {})
+    @@logged_in = false
+    print("START")
+    urlCnt = 0
+    urlCntNew = 0
+    posts = Array.new
+    response.css("url").drop(1).each do |a|
+      urlCnt = urlCnt + 1
+      @url = a.css('loc').text
+      puts(a.css("loc").text)
+      krl = absolute_url(a.css("loc").text, base: url)
+      if Kernal.exists?(url: krl)
+        print('.')
+      else
+        puts(Kernal.exists?(:time_posted => DateTime.parse(a.css("lastmod").text)))
+        puts(DateTime.parse(a.css("lastmod").text))
+        urlCntNew = urlCntNew + 1
+        posts.push(absolute_url(a.css("loc").text, base: url))
+      end
+    end
+    in_parallel(:parse_repo_page, posts, threads: 1)
     puts ColorizedString["\nDONE\ncnt:" + urlCnt.to_s + "\nnew:" + urlCntNew.to_s + "\n\n"].colorize(:red)
   end
   
-  def green;"\e[32m#{self}\e[0m" end
   def parse_repo_page(response, url:, data: {})
+    puts(url)
+    stripped = url.split(".com/")[1].split("/")[0]
+    account = SrcUrlSubset.where('url LIKE ?', '%' + stripped + '%').first
+    permissions = account.permissions
+    source_url_id = account.src_url_id
+    hypertext_id = account.id
+    file_type = ".txt"
+
+    # IMAGE FILE
     img_html = nil 
-    @xpaths['image'].each do | xpath |
+    @@xpaths['image'].each do | xpath |
       if response.xpath(xpath).attr('srcset')
         img_html = response.xpath(xpath)
       end
     end
-    
-    # TXT LOCATING, EXTRACTION
+    if !img_html.nil?
+      url_path = img_html.attr('srcset').text.scan(/\bhttps?:\/\/[^\s]+\.(?:jpg|gif|png|pnj|gifv)\b/).last
+      url_path_s = img_html.attr('srcset').text.scan(/\bhttps?:\/\/[^\s]+\.(?:jpg|gif|png|pnj|gifv)\b/).last
+      if(img_html.attr('srcset').text.include?(" 100"))
+        url_path_s = img_html.attr('srcset').text.split(" 100")[0]
+      end
+      file_type = ".avif"
+    end
+
+    # TEXT POST 
     text = ''
-    @xpaths['text'].each do | xpath |
+    @@xpaths['text'].each do | xpath |
       if response.xpath(xpath).text && text.length == 0
         text = text + response.xpath(xpath).text
       end
     end
 
-    file_type = ".txt"
-    if !img_html.nil? || !text.nil?
-      # IMAGE FILE
-      if !img_html.nil?
-        url_path = img_html.attr('srcset').text.scan(/\bhttps?:\/\/[^\s]+\.(?:jpg|gif|png|pnj|gifv)\b/).last
-        url_path_s = img_html.attr('srcset').text.scan(/\bhttps?:\/\/[^\s]+\.(?:jpg|gif|png|pnj|gifv)\b/).last
-        if(img_html.attr('srcset').text.include?(" 100"))
-          url_path_s = img_html.attr('srcset').text.split(" 100")[0]
-        end
-        file_type = ".avif"
+    # DESCRIPTION 
+    description = text
+    @@xpaths['description'].each do | xpath |
+      if response.xpath(xpath)
+        description = description + response.xpath(xpath).text
       end
-      
-      description = ""
-      if text.length > 0
-        description = text
-      elsif !descr.empty?
-        @xpaths['description'].each do | xpath |
-          if response.xpath(xpath)
-            descr = descr + response.xpath(xpath).text
-        end
-      end
+    end
 
-        description = descr.text
-      end
+    # HASHTAGS
+    hashtags = ""
+    if response.xpath(@@xpaths['hashtags'])
+      hashtags = response.xpath(@@xpaths['hashtags']).text
+    end
 
-      # HASHTAGS
-      hashtags = ""
-      if response.xpath(@xpaths['hashtags'])
-        hashtags = response.xpath(@xpaths['hashtags']).text
-      end
-
-      # POST ACCOUNT
-      author = "n/a"
-      @xpaths['author'].each do | xpath |
-          if response.xpath(xpath)
-            author = response.xpath(xpath).text
+    # POST ACCOUNT
+    author = "n/a"
+    @@xpaths['author'].each do | xpath |
+      if response.xpath(xpath)
+        if response.xpath(xpath).text.length > 3
+          author = response.xpath(xpath).text
         end
       end
-      
-      date_script = response.xpath(@xpaths['date']).text
-      date = date_script.split("\"date\"")
+    end
+    
+    # DATE POSTED
+    date_script = response.xpath(@@xpaths['date']).text
+    date = date_script.split("\"date\"")
+    if (date[0])
+      puts(date[0].length())
       date = date[1][2...25]
+      puts(date)
       time_posted = DateTime.parse(date)
+    end
 
-      # API POST
-      if !Kernal.exists?(url: url)
-        @link = Kernal.create(
-          src_url_id:@source_url_id,
-          src_url_subset_id:@hypertext_id,
-          description:description,
-          hashtags:hashtags,
-          author:author,
-          url:url,
-          file_type:file_type,
-          time_posted: time_posted,
-          permissions: ["01f7aea6-dea7-4956-ad51-6dae41e705ca"],
-          signed_url: url_path,
-          signed_url_s: url_path_s,
-          signed_url_m: url_path_s,
-          signed_url_l: url_path,
-        )
-        print ColorizedString["200 ( OK ) "].colorize(:green)
-        puts(url)
-      end
+    puts(url)
+    # SAVE TO ActiveRecord 
+    if !Kernal.exists?(url: url) && !Kernal.exists?(signed_url: url_path)
+      @link = Kernal.create(
+        src_url_id:source_url_id,
+        src_url_subset_id:hypertext_id,
+        description:description,
+        hashtags:hashtags,
+        author:author,
+        url:url,
+        time_posted: time_posted,
+        file_type:file_type,
+        permissions: permissions,
+        signed_url: url_path,
+        signed_url_s: url_path_s,
+        signed_url_m: url_path_s,
+        signed_url_l: url_path
+      )
+      print ColorizedString["200 ( OK ) "].colorize(:green)
+      puts(author + " -- " + hypertext_id + "--" + url)
     end
   end
 
   def self.close_spider
-    puts("> Stopped!")
+    puts("> Stopped Spider!")
   end
 end
 

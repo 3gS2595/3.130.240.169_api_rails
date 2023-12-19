@@ -37,6 +37,7 @@ gem 'colorize', '~> 1.1'
 gem 'pagy'
 gem "devise-jwt", "~> 0.11.0"
 gem "bootsnap", require: false
+gem "tumblr_client"
 
 group :development do
     gem 'capistrano',         require: false

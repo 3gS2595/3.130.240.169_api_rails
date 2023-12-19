@@ -6,6 +6,11 @@ class TanakaiScheduler
   include Sidekiq::Worker
 
   def perform
-    TumblrSpider.crawl!
+    begin
+      TumblrSpider.crawl!
+    rescue => e
+      puts(e)
+      puts("SPIDER FAILURE ") 
+    end
   end
 end

@@ -35,6 +35,10 @@ class KernalsController < ApplicationController
       end; nil
 
       # search, sorts, paginates selected kernals
+      if params.has_key?(:q)
+        @q = @q.ransack(search_params)
+        @q = @q.result
+      end
       @q.order('created_at DESC')
       @pagy, @page = params.has_key?(:page) ? pagy(@q) : @q 
    
