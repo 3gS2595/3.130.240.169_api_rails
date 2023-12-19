@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_12_19_015418) do
+ActiveRecord::Schema[7.0].define(version: 2023_12_19_213505) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -64,9 +64,9 @@ ActiveRecord::Schema[7.0].define(version: 2023_12_19_015418) do
     t.datetime "time_scraped"
     t.string "description"
     t.string "key_words"
-    t.string "hashtags"
-    t.string "likes"
-    t.string "reposts"
+    t.text "hashtags", default: [], array: true
+    t.text "likes", default: [], array: true
+    t.text "reposts", default: [], array: true
     t.string "signed_url"
     t.string "signed_url_s"
     t.string "signed_url_m"
