@@ -254,6 +254,7 @@ class KernalsController < ApplicationController
         :image, 
         :forceGraph, 
         :src_url_subset_id, 
+        :src_url_subset_assigned_id,
         :mixtape, 
         :hypertext_id, 
         :source_url_id, 

@@ -5,7 +5,7 @@ class SrcUrlSubsetsController < ApplicationController
   def index
     @permited = SrcUrlSubset.where("permissions @> ARRAY[?]::varchar[]", [current_user.id])
     @q = @permited.ransack(search_params)
-    @q.sorts = 'updated_at desc' 
+    @q.sorts = 'time_last_entry desc' 
     @pagy, @page = params.has_key?(:page) ? pagy(@q.result) : @q.result 
     render json: @page
   end
@@ -29,9 +29,7 @@ class SrcUrlSubsetsController < ApplicationController
     else
       domain = /^(?:https?:\/\/)?(?:[^@\/\n]+@)?(?:www\.)?([^:\/?\n]+)/.match(params[:url])[1]
       @src_url_subset.src_url_id = SrcUrl.where(url: domain).first.id
-
     end
-
 
     @src_url_subset.id = uuid
     if @src_url_subset.save

@@ -4,7 +4,11 @@ module RansackHelper
   included do
     Kernal.column_names.each do |e|
       ransacker e do
-        Arel.sql("\"#{table_name}\".\"#{e}\"::varchar")
+        if e == 'hashtags' || e =='likes' || e == 'reposts'
+          Arel.sql("array_to_string(" + e + ", ',')") 
+        else
+          Arel.sql("\"#{table_name}\".\"#{e}\"::varchar")
+        end
       end
     end
   

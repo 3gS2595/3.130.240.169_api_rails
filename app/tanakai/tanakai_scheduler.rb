@@ -7,7 +7,8 @@ class TanakaiScheduler
 
   def perform
     begin
-      TumblrSpider.crawl!
+      tumApi = TumblrApi.new
+      tumApi.intake
     rescue => e
       puts(e)
       puts("SPIDER FAILURE ") 
