@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_12_19_213505) do
+ActiveRecord::Schema[7.0].define(version: 2023_12_21_173927) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -41,6 +41,19 @@ ActiveRecord::Schema[7.0].define(version: 2023_12_19_213505) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "events", force: :cascade do |t|
+    t.string "status"
+    t.string "tid"
+    t.datetime "event_time"
+    t.string "origin"
+    t.string "info"
+    t.string "busy_objects"
+    t.integer "duration_limit"
+    t.string "permissions", default: [], array: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "jwt_denylist", force: :cascade do |t|

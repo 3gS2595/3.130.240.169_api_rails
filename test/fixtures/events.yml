@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  status: MyString
+  event_time: 2023-12-21 17:39:27
+  info: MyString
+  budy_objects: MyString
+
+two:
+  status: MyString
+  event_time: 2023-12-21 17:39:27
+  info: MyString
+  budy_objects: MyString

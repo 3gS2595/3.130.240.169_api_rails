@@ -33,7 +33,7 @@ class SrcUrlSubsetsController < ApplicationController
 
     @src_url_subset.id = uuid
     if @src_url_subset.save
-      Sidekiq.set_schedule(params[:name], { 'in' => ['2s'], 'class' => 'TanakaiScheduler' })
+      Sidekiq.set_schedule(params[:name], { 'in' => ['2s'], 'class' => 'TumblrApi' })
       render json: @src_url_subset, status: :created, location: @src_url_subset
     else
       render json: @src_url_subset.errors, status: :unprocessable_entity
