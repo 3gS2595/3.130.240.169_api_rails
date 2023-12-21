@@ -4,5 +4,5 @@
     max_work_threads: 1
   :schedule:
     tumblr_api:
-      every: ['5m', first_in: '1s']
+      every: ['15m', first_in: '1s']
       class: TumblrApi 
