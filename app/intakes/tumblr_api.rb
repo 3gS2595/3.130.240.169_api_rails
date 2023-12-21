@@ -6,6 +6,16 @@ class TumblrApi
   include Sidekiq::Job
 
   def perform()
+    Event.all.each do |e|
+      cnt_time_cur = Time.now
+      cnt_elapsed = cnt_time_cur - e.event_time.to_time 
+      puts(e.info + ' dead? ' + cnt_elapsed.to_s)
+      if cnt_elapsed > 40
+        puts(e.info + ' IS DEAD, setting to resume')
+        e.update_attribute(:status, 'resume')
+      end
+    end
+
     cnt_time_start = Time.now
     client = Tumblr::Client.new({
       :consumer_key => Rails.application.credentials.tumblr[:consumer_key_0],

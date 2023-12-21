@@ -1,9 +1,8 @@
 :scheduler:
   :dynamic: true
+  :rufus_scheduler_options: 
+    max_work_threads: 1
   :schedule:
-    event_cleaner:
-      every: ['1m', first_in: '1s']
-      class: EventCleaner 
     tumblr_api:
       every: ['5m', first_in: '1s']
       class: TumblrApi 
