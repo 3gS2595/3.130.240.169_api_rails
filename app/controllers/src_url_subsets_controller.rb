@@ -3,11 +3,10 @@ class SrcUrlSubsetsController < ApplicationController
   
   # GET /src_url_subsets
   def index
-    @permited = SrcUrlSubset.where("permissions @> ARRAY[?]::varchar[]", [current_user.id])
+    @permited = SrcUrlSubset.order(time_last_entry: :desc).where("permissions @> ARRAY[?]::varchar[]", [current_user.id])
     @q = @permited.ransack(search_params)
-    @q.sorts = 'time_last_entry desc' 
     @pagy, @page = params.has_key?(:page) ? pagy(@q.result) : @q.result 
-    render json: @page
+    render json: @page.except(:content)
   end
 
   # GET /src_url_subsets/1

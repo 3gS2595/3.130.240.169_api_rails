@@ -13,31 +13,42 @@ gem "pg", "~> 1.1"
 gem "puma", "~> 5.0"
 
 gem "rack-cors"
-gem "nokogiri"
-gem 'aws-sdk-s3'
 gem 'devise'
-gem 'open-uri'
-gem 'kimurai'
-gem 'tanakai'
-gem 'down'
-gem 'fileutils'
-gem 'redis'
-gem 'sidekiq'
-gem 'sidekiq-scheduler'
-gem 'mini_magick'
-gem 'rmagick'
-gem 'ransack', :github => 'activerecord-hackery/ransack', :branch => 'main'
-gem 'wt_s3_signer', '~> 1.0', '>= 1.0.2'
 gem 'goldiloader'
-gem 'carrierwave-aws'
-gem 'carrierwave', '~> 1.0'
-gem 'arena'
-gem 'aws-sigv4'
 gem 'colorize', '~> 1.1'
-gem 'pagy'
 gem "devise-jwt", "~> 0.11.0"
 gem "bootsnap", require: false
+
+# File mod/access
+gem 'down'
+gem 'rmagick'
+gem 'mini_magick'
+gem 'fileutils'
+
+# Sidekiq Scraping
+gem 'sidekiq-scheduler'
+gem 'sidekiq'
+gem 'redis'
+gem 'kimurai'
+gem 'tanakai'
+gem 'open-uri'
+gem "nokogiri"
+
+# ActiveRecord
+gem 'pagy'
+gem 'ransack', :github => 'activerecord-hackery/ransack', :branch => 'main'
+
+# AWS
+gem 'carrierwave-aws'
+gem 'carrierwave', '~> 1.0'
+gem 'aws-sigv4'
+gem 'wt_s3_signer', '~> 1.0', '>= 1.0.2'
+gem 'aws-sdk-s3'
+
+# External API gems
+gem 'arena'
 gem "tumblr_client"
+gem 'instagram_basic_display'
 
 group :development do
     gem 'capistrano',         require: false

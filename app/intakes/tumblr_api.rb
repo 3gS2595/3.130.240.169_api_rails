@@ -27,7 +27,7 @@ class TumblrApi
           e.update_attribute(:status, 'resume')
         end
       end
-      @subsets = SrcUrlSubset.where(src_url_id:  SrcUrl.where(name: 'tumblr')[0].id).reverse
+      @subsets = SrcUrlSubset.where(src_url_id:  SrcUrl.where(name: 'tumblr')[0].id)
       @todo = []
       @todoCheck = @subsets.filter { |s| s.time_last_scraped_completely == nil }
       @todoCheck.each do |s|
@@ -66,7 +66,7 @@ class TumblrApi
 
         if Event.exists?(info: src_user.url)
           if(Event.where(info: src_user.url)[0].status == 'resume')
-            cnt_post_offset = Event.where(info: src_user.url)[0].duration_limit
+            cnt_post_offset = Integer(Event.where(info: src_user.url)[0].busy_objects, exception: false)
             cnt_searched_posts = cnt_searched_posts + cnt_post_offset
             Event.where(info: src_user.url)[0].update_attribute(:status, 'in progress')
           end
@@ -114,7 +114,7 @@ class TumblrApi
               signed_url_s = []
 
               # is up to date check
-              if src_user.time_last_entry != nil && src_user.time_last_scraped_completely != nil
+              if src_user.time_last_entry != nil && src_user.time_last_scraped_completely != nil && cnt_post_offset > 0
                 if time_posted > src_user.time_last_entry
                   SrcUrlSubset.find(src_user.id).update_attribute(:time_last_entry, time_posted)
                 else
@@ -123,7 +123,7 @@ class TumblrApi
                 end
               end
               # is latest post check
-              if src_user.time_last_entry == nil 
+              if src_user.time_last_entry == nil
                 SrcUrlSubset.find(src_user.id).update_attribute(:time_last_entry, time_posted)
               elsif time_posted > src_user.time_last_entry
                 SrcUrlSubset.find(src_user.id).update_attribute(:time_last_entry, time_posted)
@@ -132,12 +132,9 @@ class TumblrApi
               if cnt_searched_posts == cnt_total_posts || (json.dig('posts').length < 50 && json.dig('posts').last == post)
                 SrcUrlSubset.find(src_user.id).update_attribute(:time_last_scraped_completely, DateTime.now()) 
                 Event.where(info: src_user.url).delete_all
-                puts 'event unfinished complete and termninated'
+                puts 'initialized'
               end
-              if Kernal.exists?(src_url_subset_assigned_id: src_url_subset_assigned_id)
-                # skips if exists
-                puts('.')
-              else
+              if !Kernal.exists?(src_url_subset_assigned_id: src_url_subset_assigned_id)
                 # image collect
                 if !post.dig('photos').nil?
                   post.dig('photos').each do |photo|
@@ -145,9 +142,27 @@ class TumblrApi
                     signed_url_s << photo.dig('alt_sizes', index, 'url')
                     signed_url << photo.dig('alt_sizes', 0, 'url')
                   end
+                elsif !post.dig("question").nil? 
+                  if post.dig("question").include? "srcset=\""
+                    post.dig("question").split("srcset=\"").drop(1).each do |set|
+                      img_src = set.split("\"")[0].scan(/\bhttps?:\/\/[^\s]+\.(?:jpg|gif|png|pnj|gifv|webp)\b/)
+                      img_src_index = img_src.length > 2 ? 2 : 0
+                      signed_url << img_src.last 
+                      signed_url_s << img_src[img_src_index]
+                    end
+                  end
                 elsif !post.dig("body").nil? 
                   if post.dig("body").include? "srcset=\""
                     post.dig("body").split("srcset=\"").drop(1).each do |set|
+                      img_src = set.split("\"")[0].scan(/\bhttps?:\/\/[^\s]+\.(?:jpg|gif|png|pnj|gifv|webp)\b/)
+                      img_src_index = img_src.length > 2 ? 2 : 0
+                      signed_url << img_src.last 
+                      signed_url_s << img_src[img_src_index]
+                    end
+                  end
+                elsif !post.dig("trail", 0, "content_raw").nil? 
+                  if post.dig("trail", 0, "content_raw").include? "srcset=\""
+                    post.dig("trail", 0, "content_raw").split("srcset=\"").drop(1).each do |set|
                       img_src = set.split("\"")[0].scan(/\bhttps?:\/\/[^\s]+\.(?:jpg|gif|png|pnj|gifv|webp)\b/)
                       img_src_index = img_src.length > 2 ? 2 : 0
                       signed_url << img_src.last 
@@ -244,7 +259,7 @@ class TumblrApi
             if Event.exists?(info: src_user.url)
               Event.where(info: src_user.url)[0].update(
                 event_time: DateTime.now(), 
-                duration_limit: cnt_post_offset, 
+                busy_objects: cnt_post_offset, 
                 status: 'scrape in progress'
               )
             end

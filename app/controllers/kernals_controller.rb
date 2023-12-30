@@ -14,7 +14,7 @@ class KernalsController < ApplicationController
         else
           # fetch kernals in any mixtape
           mixedKernals = []
-          Mixtape.all.each do |mix|
+          Mixtape.where(include_in_feed: 1).each do |mix|
             mixedKernals.concat(mix.content)
           end
           @q = @q.where(id: mixedKernals)
@@ -22,24 +22,23 @@ class KernalsController < ApplicationController
 
       else 
         if(params[:src_url_subset_id] == "-1")
-          #fetch kernals absent from any mixtape
+          # fetch kernals in any mixtape
           mixedKernals = []
-          Mixtape.all.each do |mix|
+          SrcUrlSubset.where(include_in_feed: 1).each do |mix|
             mixedKernals.concat(mix.content)
           end
-          @q = @q.where.not(id: mixedKernals)
+          @q = @q.where(id: mixedKernals)
         else
           # fetch specific src_url_subset's kernals 
           @q = @q.where(src_url_subset_id: params[:src_url_subset_id])
         end
       end; nil
 
-      # search, sorts, paginates selected kernals
+      # search, paginates selected kernals
       if params.has_key?(:q)
         @q = @q.ransack(search_params)
         @q = @q.result
       end
-      @q.order('created_at DESC')
       @pagy, @page = params.has_key?(:page) ? pagy(@q) : @q 
    
       # presign urls

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_12_21_173927) do
+ActiveRecord::Schema[7.0].define(version: 2023_12_29_204636) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -96,6 +96,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_12_21_173927) do
     t.string "permissions", default: [], array: true
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "include_in_feed"
   end
 
   create_table "src_url_subsets", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -109,6 +110,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_12_21_173927) do
     t.datetime "updated_at", null: false
     t.datetime "time_last_scraped_completely"
     t.datetime "time_last_entry"
+    t.text "content", default: [], array: true
+    t.integer "include_in_feed"
   end
 
   create_table "src_urls", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|

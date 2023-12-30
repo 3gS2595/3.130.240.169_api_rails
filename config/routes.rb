@@ -5,6 +5,11 @@ Rails.application.routes.draw do
   resources :src_urls
   resources :mixtapes
   resources :kernals
+  resources :events
+
+  authenticate :user do
+    mount Sidekiq::Web, at: "/sidekiq"
+  end
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
   devise_for :users,
@@ -13,11 +18,6 @@ Rails.application.routes.draw do
               registrations: 'users/registrations'
             }
   get '/member-data', to: 'members#show'
-  # Defines the root path route ("/")
-  # root "articles#index"
- 
-  # sidekiq
-  resources :events
-  mount Sidekiq::Web => '/sidekiq'
+
   root to: proc { [404, {}, ["Not found."]] }
 end
