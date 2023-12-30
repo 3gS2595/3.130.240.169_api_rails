@@ -20,3 +20,6 @@ Rails RESTful API & Tanakai Spiders on Sidekiq/Redis.
 
 ## PostgreSQL
 <img src="https://crystal-hair.nyc3.cdn.digitaloceanspaces.com/dbdesigns.png" width="887" >
+
+
+thanks to mobaXterm for pg_dump
