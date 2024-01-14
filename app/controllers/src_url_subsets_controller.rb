@@ -5,7 +5,7 @@ class SrcUrlSubsetsController < ApplicationController
   def index
     @permited = SrcUrlSubset.order(time_last_entry: :desc).where("permissions @> ARRAY[?]::varchar[]", [current_user.id])
     @q = @permited.ransack(search_params)
-    @pagy, @page = params.has_key?(:page) ? pagy(@q.result) : @q.result 
+    @page = params.has_key?(:page) ? @q.result.page(params[:page]).per(50) : @q.result 
     render json: @page.except(:content)
   end
 
@@ -50,6 +50,13 @@ class SrcUrlSubsetsController < ApplicationController
 
   # DELETE /src_url_subsets/1
   def destroy
+    mixedKernals = []
+    Mixtape.all.each do |mix|
+      mixedKernals.concat(mix.content)
+    end
+
+    unused = Kernal.where.not(id: mixedKernals)
+    unused.where(src_url_subset_id:  @src_url_subset.id).delete_all
     @src_url_subset.destroy
   end
 

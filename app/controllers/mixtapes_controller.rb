@@ -6,7 +6,7 @@ class MixtapesController < ApplicationController
     @permited = Mixtape.where("permissions @> ARRAY[?]::varchar[]", current_user.id)
     @q = @permited.ransack(search_params)
     @q.sorts = 'updated_at desc' 
-    @pagy, @page = params.has_key?(:page) ? pagy(@q.result) : @q.result 
+    @page = params.has_key?(:page) ? @q.result.page(params[:page]).per(50) : @q.result 
     render json: @page
   end
 
@@ -20,7 +20,8 @@ class MixtapesController < ApplicationController
     uuid = SecureRandom.uuid
     @mixtape = Mixtape.new(
       name: params[:name],
-      permissions: [current_user.id]
+      permissions: [current_user.id],
+      include_in_feed: params[:include_in_feed]
     )
     @mixtape.id = uuid
     if @mixtape.save

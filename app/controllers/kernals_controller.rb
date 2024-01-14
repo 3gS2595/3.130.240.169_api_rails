@@ -14,21 +14,14 @@ class KernalsController < ApplicationController
         else
           # fetch kernals in any mixtape
           mixedKernals = []
-          Mixtape.where(include_in_feed: 1).each do |mix|
+          Mixtape.where("permissions @> ARRAY[?]::varchar[]", [current_user.id]).where(include_in_feed: 1).each do |mix|
             mixedKernals.concat(mix.content)
           end
           @q = @q.where(id: mixedKernals)
         end
 
       else 
-        if(params[:src_url_subset_id] == "-1")
-          # fetch kernals in any mixtape
-          mixedKernals = []
-          SrcUrlSubset.where(include_in_feed: 1).each do |mix|
-            mixedKernals.concat(mix.content)
-          end
-          @q = @q.where(id: mixedKernals)
-        else
+        if(params[:src_url_subset_id] != "-1")
           # fetch specific src_url_subset's kernals 
           @q = @q.where(src_url_subset_id: params[:src_url_subset_id])
         end
@@ -36,10 +29,9 @@ class KernalsController < ApplicationController
 
       # search, paginates selected kernals
       if params.has_key?(:q)
-        @q = @q.ransack(search_params)
-        @q = @q.result
+        @q = @q.ransack(search_params).result
       end
-      @pagy, @page = params.has_key?(:page) ? pagy(@q) : @q 
+      @page = @q.page(params[:page]).per(50)
    
       # presign urls
       signer = Aws::Sigv4::Signer.new(
@@ -227,6 +219,14 @@ class KernalsController < ApplicationController
   # DELETE
   def destroy
     @kernal = Kernal.find(params[:id])
+    Mixtape.all.where("permissions @> ARRAY[?]::varchar[]", [current_user.id]).where(include_in_feed: 1).each do |mix|
+      if mix.content.include? params[:id]
+        mix.update_attribute(:content, (mix.content - [params[:id]]))
+        if mix.content = nil
+          mix.update_attribute(:content, [])
+        end
+      end
+    end
     @kernal.destroy
   end
 

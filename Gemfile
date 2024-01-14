@@ -35,7 +35,7 @@ gem 'open-uri'
 gem "nokogiri"
 
 # ActiveRecord
-gem 'pagy'
+gem 'kaminari'
 gem 'ransack', :github => 'activerecord-hackery/ransack', :branch => 'main'
 
 # AWS
