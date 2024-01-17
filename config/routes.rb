@@ -6,10 +6,9 @@ Rails.application.routes.draw do
   resources :mixtapes
   resources :kernals
   resources :events
+  resources :contents
 
-  authenticate :user do
-    mount Sidekiq::Web, at: "/sidekiq"
-  end
+  mount Sidekiq::Web, at: "/sidekiq"
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
   devise_for :users,

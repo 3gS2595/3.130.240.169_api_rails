@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_12_29_204636) do
+ActiveRecord::Schema[7.0].define(version: 2024_01_16_225008) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -43,6 +43,12 @@ ActiveRecord::Schema[7.0].define(version: 2023_12_29_204636) do
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
   end
 
+  create_table "contents", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "contains", default: [], array: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
   create_table "events", force: :cascade do |t|
     t.string "status"
     t.string "tid"
@@ -54,6 +60,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_12_29_204636) do
     t.string "permissions", default: [], array: true
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "contents", default: [], array: true
   end
 
   create_table "jwt_denylist", force: :cascade do |t|
@@ -92,11 +99,11 @@ ActiveRecord::Schema[7.0].define(version: 2023_12_29_204636) do
 
   create_table "mixtapes", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "name"
-    t.string "content", default: [], array: true
     t.string "permissions", default: [], array: true
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "include_in_feed"
+    t.uuid "contents"
   end
 
   create_table "src_url_subsets", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -110,8 +117,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_12_29_204636) do
     t.datetime "updated_at", null: false
     t.datetime "time_last_scraped_completely"
     t.datetime "time_last_entry"
-    t.text "content", default: [], array: true
     t.integer "include_in_feed"
+    t.uuid "contents"
   end
 
   create_table "src_urls", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -120,8 +127,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_12_29_204636) do
     t.string "permissions", default: [], array: true
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.integer "calls_limit"
-    t.integer "calls_current"
   end
 
   create_table "users", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|

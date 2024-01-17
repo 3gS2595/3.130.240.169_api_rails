@@ -1,11 +1,13 @@
 class EventsController < ApplicationController
-  before_action :set_event, only: %i[ show update destroy ]
+  before_action :authenticate_user!
 
   # GET /events
   def index
-    @events = Event.all
-
-    render json: @events
+    if (params.has_key?(:ids))
+      @events.where(id: params[:ids]) 
+      render json: @events
+    end
+    render nil
   end
 
   # GET /events/1

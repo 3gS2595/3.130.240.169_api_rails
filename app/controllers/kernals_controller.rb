@@ -10,12 +10,12 @@ class KernalsController < ApplicationController
       if (!params.has_key?(:src_url_subset_id))
         if params.has_key?(:mixtape)
           # fetch specific mixtape's kernals
-          @q = @q.where(id: Mixtape.find(params[:mixtape]).content)
+          @q = @q.where(id: Content.find(Mixtape.find(params[:mixtape]).contents).contains)
         else
           # fetch kernals in any mixtape
           mixedKernals = []
           Mixtape.where("permissions @> ARRAY[?]::varchar[]", [current_user.id]).where(include_in_feed: 1).each do |mix|
-            mixedKernals.concat(mix.content)
+            mixedKernals.concat(Content.find(mix.contents).contains)
           end
           @q = @q.where(id: mixedKernals)
         end
@@ -23,7 +23,7 @@ class KernalsController < ApplicationController
       else 
         if(params[:src_url_subset_id] != "-1")
           # fetch specific src_url_subset's kernals 
-          @q = @q.where(src_url_subset_id: params[:src_url_subset_id])
+          @q = @q.where(id: Content.find(SrcUrlSubset.find(params[:src_url_subset_id]).contents).contains)
         end
       end; nil
 
@@ -31,7 +31,7 @@ class KernalsController < ApplicationController
       if params.has_key?(:q)
         @q = @q.ransack(search_params).result
       end
-      @page = @q.page(params[:page]).per(50)
+      @page = @q.page(params[:page]).per(50).without_count
    
       # presign urls
       signer = Aws::Sigv4::Signer.new(
@@ -86,12 +86,12 @@ class KernalsController < ApplicationController
       # fetches forceGraph data
       if params.has_key?(:mixtape)
         # fetch specific mixtape's kernals
-        @q = @q.where(id: Mixtape.find(params[:mixtape]).content)
+        @q = @q.where(id: Content.find(Mixtape.find(params[:mixtape]).contents).contains)
       else
         # fetch kernals in any mixtape
         mixedKernals = []
-        Mixtape.all.each do |mix|
-          mixedKernals.concat(mix.content)
+        Mixtape.where("permissions @> ARRAY[?]::varchar[]", [current_user.id]).where(include_in_feed: 1).each do |mix|
+          mixedKernals.concat(Content.find(mix.contents).contains)
         end
         @q = @q.where(id: mixedKernals)
       end
@@ -138,8 +138,8 @@ class KernalsController < ApplicationController
       @kernal.update_attribute(:description, params[:text])
     end
     if params.has_key?(:mixtape) 
-      @mixtape = Mixtape.find(params[:mixtape])
-      @mixtape.update(content: @mixtape.content.push(@kernal.id))
+      @mixtape = Content.find(Mixtape.find(params[:mixtape]).contents)
+      @mixtape.update(contains: @mixtape.contains.push(@kernal.id))
       @mixtape.save
     end
     if params.has_key?(:url) 

@@ -1,6 +1,6 @@
 class CreateEvents < ActiveRecord::Migration[7.0]
   def change
-    create_table :events do |t|
+    create_table :events, id: :uuid do |t|
       t.string :status
       t.string :tid
       t.datetime :event_time

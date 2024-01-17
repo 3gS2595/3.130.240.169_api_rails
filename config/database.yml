@@ -6,7 +6,6 @@ development:
   database: crystal_hair_api_rails_development
   host: /var/run/postgresql
 
-
 test:
   # this won't work 
   adapter: postgresql
@@ -21,4 +20,3 @@ production:
   encoding: UTF-8
   database: crystal_hair_api_rails_development
   host: /var/run/postgresql
-

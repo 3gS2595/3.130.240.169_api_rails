@@ -46,6 +46,7 @@ gem 'wt_s3_signer', '~> 1.0', '>= 1.0.2'
 gem 'aws-sdk-s3'
 
 # External API gems
+gem 'discordrb'
 gem 'arena'
 gem "tumblr_client"
 gem 'instagram_basic_display'
