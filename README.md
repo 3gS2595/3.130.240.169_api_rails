@@ -19,4 +19,4 @@ Rails RESTful API & Tanakai Spiders on Sidekiq/Redis.
 - Generates and uploads .AVIF source sets to S3 style buckets using AWS-SDK-S3.
 
 ## PostgreSQL
-<img src="https://crystal-hair.nyc3.cdn.digitaloceanspaces.com/dbdesigns.png" width="887" >
+<img src="https://raw.githubusercontent.com/3gS2595/3gS2595/main/dbdesigner.png" width="887" >
