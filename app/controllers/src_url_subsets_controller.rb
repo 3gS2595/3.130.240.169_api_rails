@@ -20,7 +20,6 @@ class SrcUrlSubsetsController < ApplicationController
     @src_url_subset = SrcUrlSubset.new(
       name: params[:name],
       url: params[:url],
-      scrape_interval: params[:scrape_interval],
       permissions: [current_user.id]
     )
     if (params.has_key?(:src_url_id))

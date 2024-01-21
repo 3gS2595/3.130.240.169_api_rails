@@ -20,11 +20,11 @@ class EventFactory
   end
 
 # initializing_tumblr_account
-  def self.TumblrInitializing (sew_s_url, tid)
+  def self.TumblrInitializing (new_s_url, tid)
     @event = Event.create(
       tid: tid,
       event_time: DateTime.now(),
-      info: new_s.url,
+      info: new_s_url,
       origin: 'initializing_tumblr_account',
       duration_limit: 120,
       status: 'in progress',

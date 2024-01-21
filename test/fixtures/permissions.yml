@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  mixtapes: MyString
+  kernals: MyString
+  src_url_subsets: MyString
+  user_id: 
+
+two:
+  mixtapes: MyString
+  kernals: MyString
+  src_url_subsets: MyString
+  user_id: 

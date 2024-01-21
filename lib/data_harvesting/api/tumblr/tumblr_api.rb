@@ -18,15 +18,15 @@ class TumblrApi
       @todoCheck.each do |s|
         if !Event.exists?(info: s.url)
           # if unrecognized account, creates new event
-          TumblrInitializing(new_s.url)  
-          puts 'INITIALIZING: ' + new_s.url.split('/').last
+          EventFactory.TumblrInitializing(s.url, Thread.current.object_id.to_s)  
+          puts 'INITIALIZING: ' + s.url.split('/').last
           @todo << s
         else
           # if incompleted initialization, updates event if stale
           init_event = Event.where(info: s.url)[0]
           if (Time.now - init_event.event_time.to_time) > init_event.duration_limit
             init_event.update_attribute(:status, 'resume')
-            puts 'RESUMING INITIALIZATION: ' + new_s.url.split('/').last
+            puts 'RESUMING INITIALIZATION: ' + s.url.split('/').last
             @todo << s
           end
         end
@@ -57,11 +57,11 @@ class TumblrApi
       cnt_requests = 0
       @this_event = Event.where(tid: Thread.current.object_id.to_s)[0]
       @todo.each do | src_user |
-        time_previous_last_found_post = src_user.time_last_entry
-        time_most_recent_scrape = src_user.time_last_entry
-        cnt_searched_posts = 0
-        cnt_post_offset = @this_event.origin == 'initializing_tumblr_account' ? Integer(@this_event.busy_objects, exception: false) : 0
+        time_previous_last_found_post = !src_user.time_last_entry.nil? ? src_user.time_last_entry : DateTime.new(1900,1,1.0)
+        time_most_recent_scrape = !src_user.time_last_entry.nil? ? src_user.time_last_entry : DateTime.new(1900,1,1.0)
+        cnt_post_offset = !@this_event.busy_objects.nil? ? Integer(@this_event.busy_objects, exception: false) : 0
         cnt_total_posts = cnt_post_offset 
+        cnt_searched_posts = 0
 
         # cycles api tokens if request limit reached 
         catch :cycle_posts do
@@ -92,7 +92,7 @@ class TumblrApi
             # (api response debug print)
             cnt_total_posts = json.dig('blog', 'total_posts')
             print ("\n" + 'tumblr-api-:' + '(' + cnt_requests.to_s + ') ' + (Time.at(Time.now - cnt_time_start).utc.strftime "%H:%M:%S") + " ") 
-            print (src_user.url.split('/').last + '---' + src_user.url + cnt_searched_posts.to_s + '/' + cnt_total_posts.to_s)
+            print (src_user.url.split('/').last + '---' + src_user.url + ' ' + cnt_searched_posts.to_s + '/' + cnt_total_posts.to_s)
             json.dig('posts').each do |post|
               cnt_searched_posts = cnt_searched_posts + 1
 
@@ -114,6 +114,7 @@ class TumblrApi
               # is complete check
               if cnt_searched_posts == cnt_total_posts || (json.dig('posts').length < 50 && json.dig('posts').last == post)
                 SrcUrlSubset.find(src_user.id).update_attribute(:time_last_scraped_completely, DateTime.now()) 
+                SrcUrlSubset.find(src_user.id).update_attribute(:time_last_entry, time_most_recent_scrape)
                 Event.where(info: src_user.url).delete_all
                 print ("\n" + 'INITIALIZED ' + src_user.name)
               end
@@ -125,11 +126,12 @@ class TumblrApi
               EventFactory.UpdateTumblrInitializing(Thread.current.object_id.to_s, cnt_post_offset)  
             end
             if Event.exists?(tid: Thread.current.object_id.to_s, origin: 'tumblr_updating_all')
-              EventFactory.UpdateTumblrUpdatingAll()  
+              EventFactory.UpdateTumblrUpdatingAll(Thread.current.object_id.to_s)  
             end
           end
         end
       end
+      # Delete completed events
       if Event.exists?(tid: Thread.current.object_id.to_s)
         e = Event.where(tid: Thread.current.object_id.to_s)[0]
         if e.origin == 'tumblr_updating_all' || e.origin == 'initializing_tumblr_account'

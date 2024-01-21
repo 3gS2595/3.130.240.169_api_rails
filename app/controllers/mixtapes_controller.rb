@@ -24,6 +24,11 @@ class MixtapesController < ApplicationController
       include_in_feed: params[:include_in_feed]
     )
     @mixtape.id = uuid
+    @newContents = Content.create(
+      contains: [],
+      permissions: @mixtape.permissions
+    )
+    @mixtape.update_attribute(:contents, @newContents.id)
     if @mixtape.save
       render json: @mixtape, status: :created, location: @mixtape
     else
@@ -47,7 +52,9 @@ class MixtapesController < ApplicationController
   # DELETE /mixtapes/1
   def destroy
     @mixtape = Mixtape.find(params[:id])
+    Content.find(@mixtape.contents).destroy
     @mixtape.destroy
+
   end
 
   private

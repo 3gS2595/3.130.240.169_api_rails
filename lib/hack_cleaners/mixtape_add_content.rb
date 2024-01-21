@@ -1,14 +1,13 @@
 require './config/environment/'
 
 Mixtape.all.each do |mix|
-  new_kernals = mix.content
-  @newContents = Content.create(
-    contains: new_kernals
-  )
-  mix.update_attribute(:contents, @newContents.id)
-  puts '--'
-  puts mix.name
-  puts @newContents.id
-  puts mix.contents
-  puts new_kernals.length
+  @cont = Content.find(mix.contents)
+  @cont.assign_attributes(:permissions => Mixtape.find(mix.id).permissions)
+  @cont.save
+  puts @cont.permissions.instance_of? Array
+  puts Content.find(mix.contents).permissions
+  puts @cont.errors.inspect
+  puts ''
+
 end
+

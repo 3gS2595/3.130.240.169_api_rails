@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2024_01_16_225008) do
+ActiveRecord::Schema[7.0].define(version: 2024_01_19_183946) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -47,6 +47,7 @@ ActiveRecord::Schema[7.0].define(version: 2024_01_16_225008) do
     t.string "contains", default: [], array: true
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "permissions", default: [], array: true
   end
 
   create_table "events", force: :cascade do |t|
@@ -95,6 +96,9 @@ ActiveRecord::Schema[7.0].define(version: 2024_01_16_225008) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.text "src_url_subset_assigned_id"
+    t.index ["id"], name: "index_kernals_on_id"
+    t.index ["src_url_subset_id"], name: "index_kernals_on_src_url_subset_id"
+    t.index ["time_posted"], name: "index_kernals_on_time_posted"
   end
 
   create_table "mixtapes", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -106,11 +110,19 @@ ActiveRecord::Schema[7.0].define(version: 2024_01_16_225008) do
     t.uuid "contents"
   end
 
+  create_table "permissions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "user_id"
+    t.string "mixtapes", default: [], array: true
+    t.string "kernals", default: [], array: true
+    t.string "src_url_subsets", default: [], array: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
   create_table "src_url_subsets", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "src_url_id"
     t.string "url"
     t.string "name"
-    t.integer "scrape_interval"
     t.datetime "time_last_scraped", precision: nil
     t.string "permissions", default: [], array: true
     t.datetime "created_at", null: false
@@ -137,6 +149,7 @@ ActiveRecord::Schema[7.0].define(version: 2024_01_16_225008) do
     t.datetime "remember_created_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "permission"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
