@@ -1,5 +1,6 @@
 class Mixtape < ApplicationRecord
   include RansackHelper
+    belongs_to :content # the cell table has a person_id
   def self.ransackable_associations(auth_object = nil)
     []
   end

@@ -3,10 +3,8 @@ class MixtapesController < ApplicationController
 
   # GET /mixtapes
   def index
-    @permited = Mixtape.where("permissions @> ARRAY[?]::varchar[]", current_user.id)
-    @q = @permited.ransack(search_params)
-    @q.sorts = 'updated_at desc' 
-    @page = params.has_key?(:page) ? @q.result.page(params[:page]).per(50) : @q.result 
+    @q = Mixtape.where(id: current_user.permission.mixtapes).joins(:content).order("contents.updated_at desc")
+    @page = params.has_key?(:page) ? @q.page(params[:page]).per(100) : @q 
     render json: @page
   end
 
@@ -25,10 +23,12 @@ class MixtapesController < ApplicationController
     )
     @mixtape.id = uuid
     @newContents = Content.create(
-      contains: [],
-      permissions: @mixtape.permissions
+      contains: []
     )
-    @mixtape.update_attribute(:contents, @newContents.id)
+    @mixtape.update_attribute(:content_id, @newContents.id)
+    new = current_user.permission.mixtapes
+    new.push(@mixtape.id)
+    current_user.permission.update(mixtapes: new)
     if @mixtape.save
       render json: @mixtape, status: :created, location: @mixtape
     else
@@ -46,13 +46,18 @@ class MixtapesController < ApplicationController
     else
       @mixtape.update(mixtape_params)
     end
-    render json: @mixtape
+    @q = Mixtape.where(id: current_user.permission.mixtapes).joins(:content).order("contents.updated_at desc")
+    @page = params.has_key?(:page) ? @q.page(params[:page]).per(50) : @q 
+    render json: @page
   end
 
   # DELETE /mixtapes/1
   def destroy
     @mixtape = Mixtape.find(params[:id])
-    Content.find(@mixtape.contents).destroy
+    Content.find(@mixtape.content_id).destroy
+    new = current_user.permission.mixtapes
+    new.delete(@mixtape.id)
+    current_user.permission.update(mixtapes: new)
     @mixtape.destroy
 
   end

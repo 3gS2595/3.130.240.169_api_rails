@@ -5,13 +5,14 @@ SrcUrlSubset.all.each do |sub|
   Kernal.where(src_url_subset_id: sub.id).each do |k|
     new_kernals << k.id
   end
-  @newContents = Content.create(
-    contains: new_kernals
-  )
-  sub.update_attribute(:contents, @newContents.id)
+  if sub.content_id == nil
+     @newContents = Content.create(
+      contains: []
+    )
+    sub.update_attribute(:content_id, @newContents.id)
+  end
+  sub.content.update_attribute(:contains, new_kernals)
   puts '--'
   puts sub.name
-  puts @newContents.id
-  puts sub.contents
   puts new_kernals.length
 end

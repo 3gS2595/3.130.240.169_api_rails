@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2024_01_19_183946) do
+ActiveRecord::Schema[7.0].define(version: 2024_01_22_025535) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -47,7 +47,6 @@ ActiveRecord::Schema[7.0].define(version: 2024_01_19_183946) do
     t.string "contains", default: [], array: true
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.string "permissions", default: [], array: true
   end
 
   create_table "events", force: :cascade do |t|
@@ -107,11 +106,10 @@ ActiveRecord::Schema[7.0].define(version: 2024_01_19_183946) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "include_in_feed"
-    t.uuid "contents"
+    t.uuid "content_id"
   end
 
   create_table "permissions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
-    t.uuid "user_id"
     t.string "mixtapes", default: [], array: true
     t.string "kernals", default: [], array: true
     t.string "src_url_subsets", default: [], array: true
@@ -130,13 +128,21 @@ ActiveRecord::Schema[7.0].define(version: 2024_01_19_183946) do
     t.datetime "time_last_scraped_completely"
     t.datetime "time_last_entry"
     t.integer "include_in_feed"
-    t.uuid "contents"
+    t.uuid "content_id"
   end
 
   create_table "src_urls", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "name"
     t.string "url"
     t.string "permissions", default: [], array: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "user_feeds", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "folders", default: [], array: true
+    t.string "feed_mixtape", default: [], array: true
+    t.string "feed_sources", default: [], array: true
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
@@ -149,7 +155,8 @@ ActiveRecord::Schema[7.0].define(version: 2024_01_19_183946) do
     t.datetime "remember_created_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.uuid "permission"
+    t.uuid "permission_id"
+    t.uuid "user_feed_id"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end

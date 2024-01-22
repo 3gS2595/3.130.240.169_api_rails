@@ -4,7 +4,7 @@ class ContentsController < ApplicationController
   # GET /contents
   def index
     if (params.has_key?(:mix))
-      @contents = Content.where("permissions @> ARRAY[?]::varchar[]", [current_user.id]).where(id: Mixtape.all.pluck(:contents)).order('updated_at desc') 
+      @contents = Content.where(id: Mixtape.where(id: current_user.permission.mixtapes).pluck(:content_id)).order("updated_at desc")
       render json: @contents
     end
   end
@@ -20,14 +20,14 @@ class ContentsController < ApplicationController
     if (params.has_key?(:kid) && params.has_key?(:add))
       new = @content.contains.append(params[:kid])
       Content.update(params[:id], :contains => new)
-      @content = Content.where("permissions @> ARRAY[?]::varchar[]", [current_user.id]).where(id: Mixtape.all.pluck(:contents)).order('updated_at desc')
+      @content = Content.where(id: Mixtape.where(id: current_user.permission.mixtapes).pluck(:content_id)).order("updated_at desc")
       render json: @content
     end
     if (params.has_key?(:kid) && params.has_key?(:remove))
       new = @content.contains
       new.delete(params[:kid])
       Content.update(params[:id], :contains => new)
-      @content = Content.where("permissions @> ARRAY[?]::varchar[]", [current_user.id]).where(id: Mixtape.all.pluck(:contents)).order('updated_at desc')
+      @content = Content.where(id: Mixtape.where(id: current_user.permission.mixtapes).pluck(:content_id)).order("updated_at desc")
       render json: @content
     end
   end

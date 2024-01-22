@@ -109,6 +109,9 @@ class TumblrResponseExtract
             signed_url_m: signed_url_s[index],
             signed_url_l: signed_url[index]
           )
+          @content = SrcUrlSubset.find(src_user.id).content
+          new = @content.contains.append(@link.id)
+          Content.update(@content.id, :contains => new)
           print "\n" + signed_url[index]
         end
         elsif !Kernal.exists?(src_url_subset_assigned_id: src_url_subset_assigned_id)
@@ -130,6 +133,9 @@ class TumblrResponseExtract
             signed_url_m: nil,
             signed_url_l: nil
           )
+          @content = SrcUrlSubset.find(src_user.id).content
+          new = @content.contains.append(@link.id)
+          Content.update(@content.id, :contains => new)
           print "\n" + url
       end         
     end  

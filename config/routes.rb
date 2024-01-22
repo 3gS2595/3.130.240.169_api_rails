@@ -1,6 +1,7 @@
 require 'sidekiq/web'
 
 Rails.application.routes.draw do
+  resources :user_feeds
   resources :permissions
   resources :src_url_subsets
   resources :src_urls

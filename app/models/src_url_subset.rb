@@ -1,5 +1,6 @@
 class SrcUrlSubset < ApplicationRecord
   include RansackHelper
+  belongs_to :content 
   def self.ransackable_associations(auth_object = nil)
     []
   end

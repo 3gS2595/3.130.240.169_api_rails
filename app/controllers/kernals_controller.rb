@@ -10,30 +10,26 @@ class KernalsController < ApplicationController
       if (!params.has_key?(:src_url_subset_id))
         if params.has_key?(:mixtape)
           # fetch specific mixtape's kernals
-          @q = @q.where(id: Content.find(Mixtape.find(params[:mixtape]).contents).contains)
+          @q = @q.where(id: Mixtape.find(params[:mixtape]).content.contains)
         else
           # fetch kernals in any mixtape
-          mixedKernals = []
-          Mixtape.where("permissions @> ARRAY[?]::varchar[]", [current_user.id]).where(include_in_feed: 1).each do |mix|
-            mixedKernals.concat(Content.find(mix.contents).contains)
-          end
-          @q = @q.where(id: mixedKernals)
+          @q = @q.where(id: Mixtape.where(id: current_user.user_feed.feed_mixtape).joins(:content).pluck(:'contents.contains').flatten)
         end
 
       else 
         if(params[:src_url_subset_id] != "-1")
           # fetch specific src_url_subset's kernals 
-          @q = @q.where(src_url_subset_id: params[:src_url_subset_id])
+          @q = @q.where(id: SrcUrlSubset.find(params[:src_url_subset_id]).content.contains)
+        else
+          @q = @q.where(id: SrcUrlSubset.where(id: current_user.user_feed.feed_sources).joins(:content).pluck(:'contents.contains').flatten)
         end
       end; nil
 
       # search, paginates selected kernals
-      if params.has_key?(:q)
-        @q = @q.ransack(search_params).result
-      end
+
+      # page, search, and presign media
+      @q = params.has_key?(:q) ? @q.ransack(search_params).result : @q
       @page = @q.page(params[:page]).per(100).without_count
-   
-      # presign urls
       signer = Aws::Sigv4::Signer.new(
         service: "s3",
         access_key_id: Rails.application.credentials.aws[:access_key_id],
@@ -49,7 +45,6 @@ class KernalsController < ApplicationController
             key = kernal.id + ".pdf"
             nailKey = kernal.id + ".avif"
           end
-          
           kernal.assign_attributes({ 
             :signed_url => 
               signer.presign_url(
@@ -58,7 +53,6 @@ class KernalsController < ApplicationController
                 expires_in: 600,
                 body_digest: "UNSIGNED-PAYLOAD"
               ),
-
             :signed_url_s => 
               signer.presign_url(
                 http_method: "GET",
@@ -66,7 +60,6 @@ class KernalsController < ApplicationController
                 expires_in: 600,
                 body_digest: "UNSIGNED-PAYLOAD"
               ), 
-
             :signed_url_m => 
               signer.presign_url(
                 http_method: "GET",
@@ -74,7 +67,6 @@ class KernalsController < ApplicationController
                 expires_in: 600,
                 body_digest: "UNSIGNED-PAYLOAD"
               ),
-              
             :signed_url_l => 
               signer.presign_url(
                 http_method: "GET",
@@ -88,15 +80,10 @@ class KernalsController < ApplicationController
     else
       # fetches forceGraph data
       if params.has_key?(:mixtape)
-        # fetch specific mixtape's kernals
-        @q = @q.where(id: Content.find(Mixtape.find(params[:mixtape]).contents).contains)
+        @q = @q.where(id: Mixtape.find(params[:mixtape]).content.contains)
       else
         # fetch kernals in any mixtape
-        mixedKernals = []
-        Mixtape.where("permissions @> ARRAY[?]::varchar[]", [current_user.id]).each do |mix|
-          mixedKernals.concat(Content.find(mix.contents).contains)
-        end
-        @q = @q.where(id: mixedKernals)
+        @q = @q.where(id: Mixtape.where(id: current_user.permission.mixtapes).joins(:content).pluck(:'contents.contains').flatten)
       end
       @page = @q 
     end; nil
@@ -141,9 +128,9 @@ class KernalsController < ApplicationController
       @kernal.update_attribute(:description, params[:text])
     end
     if params.has_key?(:mixtape) 
-      @mixtape = Content.find(Mixtape.find(params[:mixtape]).contents)
-      @mixtape.update(contains: @mixtape.contains.push(@kernal.id))
-      @mixtape.save
+      @content = Mixtape.find(params[:mixtape]).content
+      new = @content.contains.append(@kernal.id)
+      Content.update(@content.id, :contains => new)
     end
     if params.has_key?(:url) 
       puts(params[:url])
@@ -159,13 +146,8 @@ class KernalsController < ApplicationController
       uploader.store!(file)
     end
     @kernal.save
+
     # presign urls
-    signer = Aws::Sigv4::Signer.new(
-      service: "s3",
-      access_key_id: Rails.application.credentials.aws[:access_key_id],
-      secret_access_key: Rails.application.credentials.aws[:secret_access_key],
-      region: 'us-east-1'
-    )
     if !@kernal.file_path.nil? && @kernal.file_path.length > 0
       key = @kernal.file_path
       nailKey = @kernal.file_path
@@ -174,38 +156,43 @@ class KernalsController < ApplicationController
         nailKey = @kernal.id + ".avif"
       end
 
-      url = signer.presign_url(
-        http_method: "GET",
-        url: "https://crystal-hair.nyc3.digitaloceanspaces.com/#{key}",
-        expires_in: 600,
-        body_digest: "UNSIGNED-PAYLOAD"
+      signer = Aws::Sigv4::Signer.new(
+        service: "s3",
+        access_key_id: Rails.application.credentials.aws[:access_key_id],
+        secret_access_key: Rails.application.credentials.aws[:secret_access_key],
+        region: 'us-east-1'
       )
-      url_s = signer.presign_url(
-        http_method: "GET",
-        url: "https://crystal-hair-s.nyc3.digitaloceanspaces.com/s_160_#{nailKey}",
-        expires_in: 600,
-        body_digest: "UNSIGNED-PAYLOAD"
-      )
-      url_m = signer.presign_url(
-        http_method: "GET",
-        url: "https://crystal-hair-m.nyc3.digitaloceanspaces.com/m_400_#{nailKey}",
-        expires_in: 600,
-        body_digest: "UNSIGNED-PAYLOAD"
-      )
-      url_l = signer.presign_url(
-        http_method: "GET",
-        url: "https://crystal-hair-l.nyc3.digitaloceanspaces.com/l_1000_#{nailKey}",
-        expires_in: 600,
-        body_digest: "UNSIGNED-PAYLOAD"
-      )
-      @kernal.assign_attributes({ 
-        :signed_url => url, 
-        :signed_url_s => url_s, 
-        :signed_url_m => url_m,
-        :signed_url_l => url_l
-      })
+      kernal.assign_attributes({ 
+        :signed_url => 
+          signer.presign_url(
+            http_method: "GET",
+            url: "https://crystal-hair.nyc3.digitaloceanspaces.com/#{key}",
+            expires_in: 600,
+            body_digest: "UNSIGNED-PAYLOAD"
+          ),
+        :signed_url_s => 
+          signer.presign_url(
+            http_method: "GET",
+            url: "https://crystal-hair-s.nyc3.digitaloceanspaces.com/s_160_#{nailKey}",
+            expires_in: 600,
+            body_digest: "UNSIGNED-PAYLOAD"
+          ), 
+        :signed_url_m => 
+          signer.presign_url(
+            http_method: "GET",
+            url: "https://crystal-hair-m.nyc3.digitaloceanspaces.com/m_400_#{nailKey}",
+            expires_in: 600,
+            body_digest: "UNSIGNED-PAYLOAD"
+          ),
+        :signed_url_l => 
+          signer.presign_url(
+            http_method: "GET",
+            url: "https://crystal-hair-l.nyc3.digitaloceanspaces.com/l_1000_#{nailKey}",
+            expires_in: 600,
+            body_digest: "UNSIGNED-PAYLOAD"
+          )
+      })    
     end
-
     render json: @kernal, status: :created, location: @kernal
   end
 
@@ -222,9 +209,16 @@ class KernalsController < ApplicationController
   # DELETE
   def destroy
     @kernal = Kernal.find(params[:id])
-    Mixtape.all.where("permissions @> ARRAY[?]::varchar[]", [current_user.id]).each do |mix|
-      if Content.find(mix.contents).contains.include? params[:id]
-        Content.find(mix.contents).update_attribute(:contains, (Content.find(mix.contents).contains - [params[:id]]))
+    Mixtape.where(id: current_user.permission.mixtapes).each do |mix|
+      if mix.content.contains.include? params[:id]
+        new = mix.content.contains.delete(params[:id]) 
+        Content.update(mix.content.id, :contains => new)
+      end
+    end
+    SrcUrlSubset.where(id: current_user.permission.src_url_subsets).each do |src|
+      if src.content.contains.include? params[:id]
+        new = src.content.contains.delete(params[:id]) 
+        Content.update(src.content.id, :contains => new)
       end
     end
     @kernal.destroy
