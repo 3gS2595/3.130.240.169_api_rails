@@ -5,8 +5,7 @@ class SrcUrlSubsetsController < ApplicationController
   def index
     @permited = SrcUrlSubset.order(time_last_entry: :desc).where("permissions @> ARRAY[?]::varchar[]", [current_user.id])
     @q = @permited.ransack(search_params)
-    @page = params.has_key?(:page) ? @q.result.page(params[:page]).per(50) : @q.result 
-    render json: @page.except(:content)
+    render json: @q
   end
 
   # GET /src_url_subsets/1
@@ -16,11 +15,16 @@ class SrcUrlSubsetsController < ApplicationController
 
   # POST /src_url_subsets
   def create
+    puts 'hellscape'
     uuid = SecureRandom.uuid
+    @newContents = Content.create(
+      contains: []
+    )
     @src_url_subset = SrcUrlSubset.new(
       name: params[:name],
       url: params[:url],
-      permissions: [current_user.id]
+      permissions: [current_user.id],
+      content_id: @newContents.id
     )
     if (params.has_key?(:src_url_id))
       @src_url_subset.src_url_id = params[:src_url_id]

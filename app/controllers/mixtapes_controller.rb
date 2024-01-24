@@ -4,7 +4,7 @@ class MixtapesController < ApplicationController
   # GET /mixtapes
   def index
     @q = Mixtape.where(id: current_user.permission.mixtapes).joins(:content).order("contents.updated_at desc")
-    @page = params.has_key?(:page) ? @q.page(params[:page]).per(100) : @q 
+    @page = params.has_key?(:page) ? @q.page(params[:page]).per(@page_size) : @q 
     render json: @page
   end
 
@@ -30,7 +30,7 @@ class MixtapesController < ApplicationController
     new.push(@mixtape.id)
     current_user.permission.update(mixtapes: new)
     if @mixtape.save
-      render json: @mixtape, status: :created, location: @mixtape
+      render json: @mixtape
     else
       render json: @mixtape.errors, status: :unprocessable_entity
     end
@@ -47,8 +47,7 @@ class MixtapesController < ApplicationController
       @mixtape.update(mixtape_params)
     end
     @q = Mixtape.where(id: current_user.permission.mixtapes).joins(:content).order("contents.updated_at desc")
-    @page = params.has_key?(:page) ? @q.page(params[:page]).per(50) : @q 
-    render json: @page
+    render json: @q
   end
 
   # DELETE /mixtapes/1

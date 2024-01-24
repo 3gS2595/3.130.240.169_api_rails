@@ -29,7 +29,7 @@ class KernalsController < ApplicationController
 
       # page, search, and presign media
       @q = params.has_key?(:q) ? @q.ransack(search_params).result : @q
-      @page = @q.page(params[:page]).per(100).without_count
+      @page = @q.page(params[:page]).per(@page_size)
       signer = Aws::Sigv4::Signer.new(
         service: "s3",
         access_key_id: Rails.application.credentials.aws[:access_key_id],
@@ -137,6 +137,7 @@ class KernalsController < ApplicationController
       options = Selenium::WebDriver::Firefox::Options.new(args: ['-headless'])
       driver = Selenium::WebDriver.for(:firefox, options: options) 
       driver.navigate.to params[:url]
+      driver.manage.window.resize_to(1080, 1080)
        
       @kernal.update_attribute(:url, params[:url])
       driver.save_screenshot("selenium.png")
@@ -162,7 +163,7 @@ class KernalsController < ApplicationController
         secret_access_key: Rails.application.credentials.aws[:secret_access_key],
         region: 'us-east-1'
       )
-      kernal.assign_attributes({ 
+      @kernal.assign_attributes({ 
         :signed_url => 
           signer.presign_url(
             http_method: "GET",
@@ -211,13 +212,15 @@ class KernalsController < ApplicationController
     @kernal = Kernal.find(params[:id])
     Mixtape.where(id: current_user.permission.mixtapes).each do |mix|
       if mix.content.contains.include? params[:id]
-        new = mix.content.contains.delete(params[:id]) 
+        new = mix.content.contains
+        new.delete(params[:id]) 
         Content.update(mix.content.id, :contains => new)
       end
     end
     SrcUrlSubset.where(id: current_user.permission.src_url_subsets).each do |src|
       if src.content.contains.include? params[:id]
-        new = src.content.contains.delete(params[:id]) 
+        new = src.content.contains 
+        new.delete(params[:id])
         Content.update(src.content.id, :contains => new)
       end
     end

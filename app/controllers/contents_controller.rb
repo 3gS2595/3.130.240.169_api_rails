@@ -7,6 +7,16 @@ class ContentsController < ApplicationController
       @contents = Content.where(id: Mixtape.where(id: current_user.permission.mixtapes).pluck(:content_id)).order("updated_at desc")
       render json: @contents
     end
+    if (params.has_key?(:src))
+      @contents = Content.where(id: SrcUrlSubset.where(id: current_user.permission.src_url_subsets).pluck(:content_id)).order("updated_at desc")
+      @contents.each do |c|
+        size = c.contains.size
+        c.assign_attributes({ 
+          :contains => [size]
+        })   
+      end
+      render json: @contents
+    end
   end
 
   # GET /contents/1
