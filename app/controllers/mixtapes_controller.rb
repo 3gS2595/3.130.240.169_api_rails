@@ -4,8 +4,7 @@ class MixtapesController < ApplicationController
   # GET /mixtapes
   def index
     @q = Mixtape.where(id: current_user.permission.mixtapes).joins(:content).order("contents.updated_at desc")
-    @page = params.has_key?(:page) ? @q.page(params[:page]).per(@page_size) : @q 
-    render json: @page
+    render json: @q
   end
 
   # GET /mixtapes/1
@@ -15,13 +14,9 @@ class MixtapesController < ApplicationController
 
   # POST /mixtapes
   def create
-    uuid = SecureRandom.uuid
     @mixtape = Mixtape.new(
-      name: params[:name],
-      permissions: [current_user.id],
-      include_in_feed: params[:include_in_feed]
+      name: params[:name]
     )
-    @mixtape.id = uuid
     @newContents = Content.create(
       contains: []
     )
@@ -29,6 +24,9 @@ class MixtapesController < ApplicationController
     new = current_user.permission.mixtapes
     new.push(@mixtape.id)
     current_user.permission.update(mixtapes: new)
+    new = current_user.user_feed.feed_mixtape
+    new.push(@mixtape.id)
+    current_user.user_feed.update(feed_mixtape: new)
     if @mixtape.save
       render json: @mixtape
     else
@@ -39,15 +37,9 @@ class MixtapesController < ApplicationController
   # PATCH/PUT /mixtapes/1
   def update
     @mixtape = Mixtape.find(params[:id])
-    if (params.has_key?(:addKernal))
-      @mixtape.update(content: @mixtape.content.push(params[:addKernal]))
-    elsif (params.has_key?(:remKernal))
-      @mixtape.update(content: @mixtape.content.select! { |el| el != params[:remKernal] })
-    else
-      @mixtape.update(mixtape_params)
-    end
-    @q = Mixtape.where(id: current_user.permission.mixtapes).joins(:content).order("contents.updated_at desc")
-    render json: @q
+    @mixtape.update(mixtape_params)
+    Content.update(@mixtape.content.id, updated_at: DateTime.now())
+    render json: @mixtape
   end
 
   # DELETE /mixtapes/1

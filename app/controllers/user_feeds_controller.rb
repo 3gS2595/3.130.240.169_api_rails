@@ -20,7 +20,6 @@ class UserFeedsController < ApplicationController
     else
       @feed = UserFeed.find(current_user.user_feed_id)
     end
-    puts @feed.id
     if (params.has_key?(:mid) && params.has_key?(:add))
       new = @feed.feed_mixtape.append(params[:mid])
       UserFeed.update(@feed.id, :feed_mixtape => new)

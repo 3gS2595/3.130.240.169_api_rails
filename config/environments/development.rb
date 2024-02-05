@@ -51,7 +51,7 @@ Rails.application.configure do
 
   # Highlight code that triggered database queries in logs.
   config.active_record.verbose_query_logs = false 
-
+config.logger = ActiveSupport::Logger.new(config.paths['log'].first, 1, 50 * 1024 * 1024)
 
   # Raises error for missing translations.
   # config.i18n.raise_on_missing_translations = true

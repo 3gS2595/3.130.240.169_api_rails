@@ -30,15 +30,13 @@ class ContentsController < ApplicationController
     if (params.has_key?(:kid) && params.has_key?(:add))
       new = @content.contains.append(params[:kid])
       Content.update(params[:id], :contains => new)
-      @content = Content.where(id: Mixtape.where(id: current_user.permission.mixtapes).pluck(:content_id)).order("updated_at desc")
-      render json: @content
+      render json: Content.find(params[:id])
     end
     if (params.has_key?(:kid) && params.has_key?(:remove))
       new = @content.contains
       new.delete(params[:kid])
       Content.update(params[:id], :contains => new)
-      @content = Content.where(id: Mixtape.where(id: current_user.permission.mixtapes).pluck(:content_id)).order("updated_at desc")
-      render json: @content
+      render json: Content.find(params[:id])
     end
   end
 

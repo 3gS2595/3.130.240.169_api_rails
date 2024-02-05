@@ -3,9 +3,8 @@ class SrcUrlSubsetsController < ApplicationController
   
   # GET /src_url_subsets
   def index
-    @permited = SrcUrlSubset.order(time_last_entry: :desc).where("permissions @> ARRAY[?]::varchar[]", [current_user.id])
-    @q = @permited.ransack(search_params)
-    render json: @q
+    @permited = SrcUrlSubset.where(id: current_user.permission.src_url_subsets).order("time_last_entry desc")
+    render json: @permited
   end
 
   # GET /src_url_subsets/1
@@ -15,17 +14,22 @@ class SrcUrlSubsetsController < ApplicationController
 
   # POST /src_url_subsets
   def create
-    puts 'hellscape'
-    uuid = SecureRandom.uuid
     @newContents = Content.create(
       contains: []
     )
-    @src_url_subset = SrcUrlSubset.new(
+    @src_url_subset = SrcUrlSubset.create(
       name: params[:name],
       url: params[:url],
-      permissions: [current_user.id],
       content_id: @newContents.id
     )
+
+    new = current_user.permission.src_url_subsets
+    new.push(@src_url_subset.id)
+    current_user.permission.update(src_url_subsets: new)
+    new = current_user.user_feed.feed_sources
+    new.push(@src_url_subset.id)
+    current_user.user_feed.update(feed_sources: new)
+
     if (params.has_key?(:src_url_id))
       @src_url_subset.src_url_id = params[:src_url_id]
     else
@@ -33,9 +37,10 @@ class SrcUrlSubsetsController < ApplicationController
       @src_url_subset.src_url_id = SrcUrl.where(url: domain).first.id
     end
 
-    @src_url_subset.id = uuid
     if @src_url_subset.save
-      Sidekiq.set_schedule(params[:name], { 'in' => ['2s'], 'class' => 'TumblrApi' })
+      if (params[:url].include? "tumblr")
+        Sidekiq.set_schedule(params[:name], { 'in' => ['2s'], 'class' => 'TumblrApi' })
+      end
       render json: @src_url_subset, status: :created, location: @src_url_subset
     else
       render json: @src_url_subset.errors, status: :unprocessable_entity

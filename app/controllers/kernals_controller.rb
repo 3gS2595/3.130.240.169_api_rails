@@ -4,24 +4,23 @@ class KernalsController < ApplicationController
   
   # GET
   def index
-    @q = Kernal.order(time_posted: :desc).where("permissions @> ARRAY[?]::varchar[]", [current_user.id])
     if !params.has_key?(:forceGraph)
 
       if (!params.has_key?(:src_url_subset_id))
         if params.has_key?(:mixtape)
           # fetch specific mixtape's kernals
-          @q = @q.where(id: Mixtape.find(params[:mixtape]).content.contains)
+          @q = Kernal.order(time_posted: :desc).where(id: Mixtape.find(params[:mixtape]).content.contains)
         else
           # fetch kernals in any mixtape
-          @q = @q.where(id: Mixtape.where(id: current_user.user_feed.feed_mixtape).joins(:content).pluck(:'contents.contains').flatten)
+          @q = Kernal.order(time_posted: :desc).where(id: Mixtape.where(id: current_user.user_feed.feed_mixtape).joins(:content).pluck(:'contents.contains').flatten)
         end
 
       else 
         if(params[:src_url_subset_id] != "-1")
           # fetch specific src_url_subset's kernals 
-          @q = @q.where(id: SrcUrlSubset.find(params[:src_url_subset_id]).content.contains)
+          @q = Kernal.order(time_posted: :desc).where(id: SrcUrlSubset.find(params[:src_url_subset_id]).content.contains)
         else
-          @q = @q.where(id: SrcUrlSubset.where(id: current_user.user_feed.feed_sources).joins(:content).pluck(:'contents.contains').flatten)
+          @q = Kernal.order(time_posted: :desc).where(id: SrcUrlSubset.where(id: current_user.user_feed.feed_sources).joins(:content).pluck(:'contents.contains').flatten)
         end
       end; nil
 
@@ -77,17 +76,18 @@ class KernalsController < ApplicationController
           })      
         end
       end
+      render json: @page
     else
       # fetches forceGraph data
       if params.has_key?(:mixtape)
-        @q = @q.where(id: Mixtape.find(params[:mixtape]).content.contains)
+        @q = Kernal.where(id: Mixtape.find(params[:mixtape]).content.contains)
       else
         # fetch kernals in any mixtape
-        @q = @q.where(id: Mixtape.where(id: current_user.permission.mixtapes).joins(:content).pluck(:'contents.contains').flatten)
+        @q = Kernal.where(id: Mixtape.where(id: current_user.permission.mixtapes).joins(:content).pluck(:'contents.contains').flatten)
       end
       @page = @q 
+      render json: @page.as_json(only: [:id, :file_type])
     end; nil
-    render json: @page
   end
 
   # GET
@@ -136,9 +136,9 @@ class KernalsController < ApplicationController
       puts(params[:url])
       options = Selenium::WebDriver::Firefox::Options.new(args: ['-headless'])
       driver = Selenium::WebDriver.for(:firefox, options: options) 
-      driver.navigate.to params[:url]
       driver.manage.window.resize_to(1080, 1080)
-       
+      driver.navigate.to params[:url]
+      sleep(3) 
       @kernal.update_attribute(:url, params[:url])
       driver.save_screenshot("selenium.png")
       driver.quit
