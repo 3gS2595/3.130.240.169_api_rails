@@ -21,16 +21,7 @@ class TumblrResponseExtract
         signed_url_s << photo.dig('alt_sizes', index, 'url')
         signed_url << photo.dig('alt_sizes', 0, 'url')
       end
-    elsif !post.dig("question").nil? 
-      if post.dig("question").include? "srcset=\""
-        post.dig("question").split("srcset=\"").drop(1).each do |set|
-          img_src = set.split("\"")[0].scan(/\bhttps?:\/\/[^\s]+\.(?:jpg|gif|png|pnj|gifv|webp)\b/)
-          img_src_index = img_src.length > 2 ? 2 : 0
-          signed_url << img_src.last 
-          signed_url_s << img_src[img_src_index]
-        end
-      end
-    elsif !post.dig("body").nil? 
+    elsif  !post.dig("body").nil? 
       if post.dig("body").include? "srcset=\""
         post.dig("body").split("srcset=\"").drop(1).each do |set|
           img_src = set.split("\"")[0].scan(/\bhttps?:\/\/[^\s]+\.(?:jpg|gif|png|pnj|gifv|webp)\b/)
@@ -42,6 +33,15 @@ class TumblrResponseExtract
     elsif !post.dig("trail", 0, "content_raw").nil? 
       if post.dig("trail", 0, "content_raw").include? "srcset=\""
         post.dig("trail", 0, "content_raw").split("srcset=\"").drop(1).each do |set|
+          img_src = set.split("\"")[0].scan(/\bhttps?:\/\/[^\s]+\.(?:jpg|gif|png|pnj|gifv|webp)\b/)
+          img_src_index = img_src.length > 2 ? 2 : 0
+          signed_url << img_src.last 
+          signed_url_s << img_src[img_src_index]
+        end
+      end
+    elsif !post.dig("question").nil? 
+      if post.dig("question").include? "srcset=\""
+        post.dig("question").split("srcset=\"").drop(1).each do |set|
           img_src = set.split("\"")[0].scan(/\bhttps?:\/\/[^\s]+\.(?:jpg|gif|png|pnj|gifv|webp)\b/)
           img_src_index = img_src.length > 2 ? 2 : 0
           signed_url << img_src.last 
@@ -87,7 +87,8 @@ class TumblrResponseExtract
     if signed_url.length > 0
       file_type = '.avif'
     end
-
+    
+    new_k = []
     if signed_url.length > 0
       for index in 0 ... signed_url.length
         @link = Kernal.create(
@@ -109,10 +110,8 @@ class TumblrResponseExtract
           signed_url_m: signed_url_s[index],
           signed_url_l: signed_url[index]
         )
-        @content = SrcUrlSubset.find(src_user.id).content
-        new = @content.contains.push(@link.id)
-        Content.update(@content.id, :contains => new)
-        print "\n" + signed_url[index]
+        new_k << @link.id
+        print "\n" + @link.url 
       end
     else
       @link = Kernal.create(
@@ -133,10 +132,9 @@ class TumblrResponseExtract
         signed_url_m: nil,
         signed_url_l: nil
       )
-      @content = SrcUrlSubset.find(src_user.id).content
-      new = @content.contains.push(@link.id)
-      Content.update(@content.id, :contains => new)
-      print "\n" + url
+      new_k << @link.id
+      print "\n" + @link.url 
     end         
+    return new_k
   end  
 end

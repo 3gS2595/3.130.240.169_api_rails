@@ -11,12 +11,15 @@ class TumblrApi
       cnt_time_start = Time.now
       @subsets = SrcUrlSubset.where(src_url_id:  SrcUrl.where(name: 'tumblr')[0].id)
       @this_event = nil
+      @page_size = 50
       @todo = []
 
       # initializing_tumblr_account event handling
       @todoCheck = @subsets.filter { |s| s.time_last_scraped_completely == nil }
       @todoCheck.each do |s|
-        if @todo.empty?
+        puts 'checking' + s.url
+        puts (!Event.where(origin: 'initializing_tumblr_account').exists?(['updated_at >= ?', 10.minutes.ago]))
+        if @todo.empty? && !Event.where(origin: 'initializing_tumblr_account').exists?(['updated_at >= ?', (DateTime.now - ((10/60)/24))])
           if !Event.exists?(info: s.url)
             # if unrecognized account, creates new event
             @this_event = EventFactory.TumblrInitializing(s.url, Thread.current.object_id.to_s)  
@@ -58,6 +61,12 @@ class TumblrApi
       # cycles approved accounts
       cnt_requests = 0
       extractor = TumblrResponseExtract.new()
+      client = Tumblr::Client.new({
+        :consumer_key => Rails.application.credentials.tumblr[:consumer_key_0],
+        :consumer_secret => Rails.application.credentials.tumblr[:consumer_secret_0],
+        :oauth_token => Rails.application.credentials.tumblr[:oauth_token_0],
+        :oauth_token_secret => Rails.application.credentials.tumblr[:oauth_token_secret_0]
+      })
       @todo.each do | src_user |
         permissions = []
         User.all.each do |user|
@@ -73,80 +82,94 @@ class TumblrApi
 
         # cycles api tokens if request limit reached 
         catch :cycle_posts do
-          client = Tumblr::Client.new({
-            :consumer_key => Rails.application.credentials.tumblr[:consumer_key_0],
-            :consumer_secret => Rails.application.credentials.tumblr[:consumer_secret_0],
-            :oauth_token => Rails.application.credentials.tumblr[:oauth_token_0],
-            :oauth_token_secret => Rails.application.credentials.tumblr[:oauth_token_secret_0]
-          })
           while cnt_post_offset <= cnt_total_posts
             cnt_requests = cnt_requests + 1
-            json =  JSON.parse(client.posts(src_user.url.split('/').last + '.tumblr.com', :limit => 50, :offset => cnt_post_offset, :notes_info => true, :reblog_info => true).to_json)
+            json =  JSON.parse(client.posts(src_user.url.split('/').last + '.tumblr.com', :limit => @page_size, :offset => cnt_post_offset, :notes_info => true, :reblog_info => true).to_json)
             if json.dig('status') == 429
-              puts 'SWITCHING TUMBLR API KEY'
+              puts 'SWITCHING TUMBLR API KEY == 2'
               client = Tumblr::Client.new({
                 :consumer_key => Rails.application.credentials.tumblr[:consumer_key_1],
                 :consumer_secret => Rails.application.credentials.tumblr[:consumer_secret_1],
                 :oauth_token => Rails.application.credentials.tumblr[:oauth_token_1],
                 :oauth_token_secret => Rails.application.credentials.tumblr[:oauth_token_secret_1]
               })
-              json =  JSON.parse(client.posts(src_user.url.split('/').last + '.tumblr.com', :limit => 50, :offset => cnt_post_offset, :notes_info => true, :reblog_info => true).to_json)
+              json =  JSON.parse(client.posts(src_user.url.split('/').last + '.tumblr.com', :limit => @page_size, :offset => cnt_post_offset, :notes_info => true, :reblog_info => true).to_json)
               if json.dig('status') == 429
-                puts('API LIMIT REACHED')
-                throw :api_limit_reached
+                puts 'SWITCHING TUMBLR API KEY == 3'
+                client = Tumblr::Client.new({
+                  :consumer_key => Rails.application.credentials.tumblr[:consumer_key_2],
+                  :consumer_secret => Rails.application.credentials.tumblr[:consumer_secret_2],
+                  :oauth_token => Rails.application.credentials.tumblr[:oauth_token_2],
+                  :oauth_token_secret => Rails.application.credentials.tumblr[:oauth_token_secret_2]
+                })
+                json =  JSON.parse(client.posts(src_user.url.split('/').last + '.tumblr.com', :limit => @page_size, :offset => cnt_post_offset, :notes_info => true, :reblog_info => true).to_json)
+                if json.dig('status') == 429
+                  puts('API LIMIT REACHED')
+                  throw :api_limit_reached
+                end
               end
             end
-
             # iterates through api response's posts
             # (api response debug print)
             cnt_total_posts = json.dig('blog', 'total_posts')
             print ("\n" + '-- API REQUEST --tumblr-api-:' + '(' + cnt_requests.to_s + ') ' + (Time.at(Time.now - cnt_time_start).utc.strftime "%H:%M:%S") + " ") 
             print (src_user.url.split('/').last + '---' + src_user.url + ' ' + cnt_post_offset.to_s + '/' + cnt_total_posts.to_s)
-            json.dig('posts').each do |post|
-              cnt_searched_posts = cnt_searched_posts + 1
+            new_k = []
+            if json.dig('posts') != nil
+              json.dig('posts').each do |post|
+                cnt_searched_posts = cnt_searched_posts + 1
 
-              # records most recent datetime/time_last_entry found
-              time_posted = DateTime.parse(post.dig("date"))
-              if time_posted > time_most_recent_scrape
-                time_most_recent_scrape = time_posted
-              # is up to date check
-              elsif time_posted < time_previous_last_found_post
-                SrcUrlSubset.find(src_user.id).update(time_last_entry: time_most_recent_scrape)
-                throw :cycle_posts
-              end 
+                # records most recent datetime/time_last_entry found
+                time_posted = DateTime.parse(post.dig("date"))
+                if time_posted > time_most_recent_scrape
+                  time_most_recent_scrape = time_posted
+                # is up to date check
+                elsif time_posted < time_previous_last_found_post
+                  SrcUrlSubset.find(src_user.id).update(time_last_entry: time_most_recent_scrape)
+                  src_user.content.contains.concat(new_k)
+                  src_user.content.save
+                  throw :cycle_posts
+                end 
 
-              # creates post kernals for all media found
-              src_url_subset_assigned_id = post.dig("id")
-              if !Kernal.exists?(src_url_subset_assigned_id: src_url_subset_assigned_id)
-                extractor.extract(post, src_user, permissions, src_url_subset_assigned_id, time_posted)
+                # creates post kernals for all media found
+                src_url_subset_assigned_id = post.dig("id")
+                if !Kernal.exists?(src_url_subset_assigned_id: src_url_subset_assigned_id)
+                  new_k.concat(extractor.extract(post, src_user, permissions, src_url_subset_assigned_id, time_posted))
+                else
+                  puts ('post exists')
+                end
+
+                # is complete check
+                if cnt_searched_posts == cnt_total_posts || (json.dig('posts').length < @page_size && json.dig('posts').last == post)
+                  SrcUrlSubset.find(src_user.id).update(time_last_scraped_completely: DateTime.now(), time_last_entry: time_most_recent_scrape)
+                  Event.where(info: src_user.url).delete_all
+                  print ("\n" + 'INITIALIZED ' + src_user.name)
+                end
               end
-
-              # is complete check
-              if cnt_searched_posts == cnt_total_posts || (json.dig('posts').length < 50 && json.dig('posts').last == post)
-                SrcUrlSubset.find(src_user.id).update(time_last_scraped_completely: DateTime.now(), time_last_entry: time_most_recent_scrape)
-                Event.where(info: src_user.url).delete_all
-                print ("\n" + 'INITIALIZED ' + src_user.name)
+              src_user.content.contains.concat(new_k)
+              src_user.content.save
+              # updates event heartbeats 
+              cnt_post_offset = cnt_post_offset + @page_size
+              if @this_event.origin == 'initializing_tumblr_account'
+                @this_event.update(
+                  busy_objects: cnt_post_offset,
+                  status: 'in progress',
+                  event_time: DateTime.now()
+                )
+              elsif @this_event.origin == 'tumblr_updating_all'
+                @this_event.update(
+                  event_time: DateTime.now(), 
+                  status: 'in progress'
+                )
               end
-            end
-            # updates event heartbeats 
-            cnt_post_offset = cnt_post_offset + 50
-            if @this_event.origin == 'initializing_tumblr_account'
-              @this_event.update(
-                busy_objects: cnt_post_offset,
-                status: 'in progress',
-                event_time: DateTime.now()
-              )
-            elsif @this_event.origin == 'tumblr_updating_all'
-              @this_event.update(
-                event_time: DateTime.now(), 
-                status: 'in progress'
-              )
             end
           end
         end
       end
       # Delete completed event
-      @this_event.delete
+      if @this_event != nil
+        @this_event.delete
+      end
     end
   end
 end
