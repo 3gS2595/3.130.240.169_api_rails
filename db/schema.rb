@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2024_02_07_203121) do
+ActiveRecord::Schema[7.0].define(version: 2024_03_28_183538) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -102,7 +102,7 @@ ActiveRecord::Schema[7.0].define(version: 2024_02_07_203121) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.text "src_url_subset_assigned_id"
-    t.index ["src_url_subset_assigned_id"], name: "index_kernals_on_src_url_subset_assigned_id"
+    t.index ["src_url_subset_id"], name: "index_kernals_on_src_url_subset_id"
     t.index ["time_posted"], name: "index_kernals_on_time_posted"
   end
 

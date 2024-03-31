@@ -51,6 +51,10 @@ gem 'arena'
 gem "tumblr_client"
 gem 'instagram_basic_display'
 
+# ONXX
+gem 'numo-narray', '~> 0.9.2.1'
+gem 'onnxruntime'
+
 group :development do
     gem 'capistrano',         require: false
     gem 'capistrano-rvm',     require: false

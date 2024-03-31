@@ -5,7 +5,6 @@ class KernalsController < ApplicationController
   # GET
   def index
     if !params.has_key?(:forceGraph)
-
       if (!params.has_key?(:src_url_subset_id))
         if params.has_key?(:mixtape)
           # fetch specific mixtape's kernals
@@ -18,9 +17,9 @@ class KernalsController < ApplicationController
       else 
         if(params[:src_url_subset_id] != "-1")
           # fetch specific src_url_subset's kernals 
-          @q = Kernal.order(time_posted: :desc).where(id: SrcUrlSubset.find(params[:src_url_subset_id]).content.contains)
+          @q = Kernal.where(id: SrcUrlSubset.find(params[:src_url_subset_id]).content.contains).order(time_posted: :desc)
         else
-          @q = Kernal.order(time_posted: :desc).where(id: SrcUrlSubset.where(id: current_user.user_feed.feed_sources).joins(:content).pluck(:'contents.contains').flatten)
+          @q = Kernal.where(id: SrcUrlSubset.where(id: current_user.user_feed.feed_sources).joins(:content).pluck(:'contents.contains').flatten).order(time_posted: :desc)
         end
       end; nil
 
