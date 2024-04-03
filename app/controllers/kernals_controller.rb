@@ -79,13 +79,28 @@ class KernalsController < ApplicationController
     else
       # fetches forceGraph data
       if params.has_key?(:mixtape)
-        @q = Kernal.where(id: Mixtape.find(params[:mixtape]).content.contains)
+        @q = Mixtape.where(id: params[:mixtape]).joins(:content).pluck(:'contents.contains').flatten
       else
-        # fetch kernals in any mixtape
-        @q = Kernal.where(id: Mixtape.where(id: current_user.permission.mixtapes).joins(:content).pluck(:'contents.contains').flatten)
+        @q = Mixtape.where(id: current_user.permission.mixtapes).joins(:content).pluck(:'contents.contains').flatten
+        @q = @q.group_by{ |e| e }.select { |k, v| v.size > 1 }.map(&:first)
       end
-      @page = @q 
-      render json: @page.as_json(only: [:id, :file_type])
+      # fetch kernals in any mixtape
+      @q = Kernal.where(id: @q).pluck(:'id').flatten
+      links = []
+      nodes = []
+      Kernal.where(id: @q).each do |k|
+        nodes << { "id" => k.id, "name" => k.id, 'val' => '8', "color" => '#ffc0cb' }
+      end
+      Mixtape.where(id: current_user.permission.mixtapes).each do |mix|
+        if (@q.intersection(mix.content.contains).any? )
+          nodes << { "id" => mix.id, "name" => mix.name, 'val' => '8', "color" => '#3459b1' }
+        end
+        @q.intersection(mix.content.contains).each do |k|
+          links << { "source" => k, "target" => mix.id, "color" => "#a3ad99" } 
+        end
+      end
+      ret = {"nodes" => nodes, "links" => links}
+      render json: ret
     end; nil
   end
 
