@@ -4,10 +4,10 @@ require 'numo/narray'
 require 'onnxruntime'
 
 
-model = OnnxRuntime::Model.new("/home/ubuntu/crystal.hair-backend-rails/lib/onxx/model1.onnx")
+model = OnnxRuntime::Model.new("/home/ubuntu/crystal.hair-backend-rails/lib/data_analysis/onnx/model1.onnx")
 
 SrcUrlSubset.all.each do |src|
-  puts(src.name)
+  puts()
   cur = 0
 
   # image collect
@@ -16,82 +16,56 @@ SrcUrlSubset.all.each do |src|
   
   # preprocessing
   @q.each do |k|
-    if(!k.signed_url_s.nil? && (k.signed_url_s.include?("webp") || k.signed_url_s.include?("pnj")  || k.signed_url_s.include?("png") || k.signed_url_s.include?("jpg") || k.signed_url_s.include?("jpeg")))
-      begin
-        # preprocessing
-        img = MiniMagick::Image.open(k.signed_url_s)
-        img.combine_options do |b|
-          b.resize '224x224!'
-        end
-        img_data = Numo::SFloat.cast(img.get_pixels)
-        img_data /= 255.0
-        image_data = img_data.expand_dims(0).to_a
+    cur = cur + 1
+    if(!k.signed_url_s.nil? && !k.hashtags.include?('8bd49265-0798-442a-ba83-3ac5cabf6d38') && !k.hashtags.include?('00a6701a-2459-4b35-a9aa-4a5465b91045'))
+      if(k.signed_url_s.include?("webp") || k.signed_url_s.include?("pnj")  || k.signed_url_s.include?("png") || k.signed_url_s.include?("jpg") || k.signed_url_s.include?("jpeg"))
+        begin
+          # preprocessing
+          img = MiniMagick::Image.open(k.signed_url_s)
+          img.combine_options do |b|
+            b.resize '224x224!'
+          end
+          img_data = Numo::SFloat.cast(img.get_pixels)
+          img_data /= 255.0
+          image_data = img_data.expand_dims(0).to_a
 
-        # inference
-        output = model.predict({input: image_data})
-        
-        # postprocessing
-        scores = output.values
-        if (scores[0][0][1] > 0.995 )
-          @content = Mixtape.find('778a904d-76aa-4e62-a5f3-b0e11a4df2e7').content
-          if (!@content.contains.include?(k.id))
-            new = @content.contains.append(k.id)
-            Content.update(@content.id, :contains => new)
-            puts(k.signed_url_s)
-            puts(scores[0][0][1])
-            puts()
+          # inference
+          output = model.predict({input: image_data})
+          
+          # postprocessingo
+          # iconography = 00a6701a-2459-4b35-a9aa-4a5465b91045 
+          # iconography_99 = 0e2899ff-8341-4b3a-8ca8-a2d39e5798a0 
+          # iconography_90 = cfd2eabe-6573-4c2a-ae07-5d5ba35bda93
+          # non-iconography = 8bd49265-0798-442a-ba83-3ac5cabf6d38
+          
+          scores = output.values
+          puts(src.name + " " + cur.to_s + " /" + cnt.to_s + " " + (scores[0][0][1]).to_s)
+          if (scores[0][0][1] > 0.99 )
+            if (!k.hashtags.include?('00a6701a-2459-4b35-a9aa-4a5465b91045'))
+              new = k.hashtags
+              new += ['00a6701a-2459-4b35-a9aa-4a5465b91045', '0e2899ff-8341-4b3a-8ca8-a2d39e5798a0']
+              Kernal.update(k.id, :hashtags => new)
+              puts(k.signed_url_s)
+              puts()
+            end
+          elsif (scores[0][0][1] > 0.95 )
+            if (!k.hashtags.include?('00a6701a-2459-4b35-a9aa-4a5465b91045'))
+              new = k.hashtags
+              new += ["00a6701a-2459-4b35-a9aa-4a5465b91045", "cfd2eabe-6573-4c2a-ae07-5d5ba35bda93"]
+              Kernal.update(k.id, :hashtags => new)
+              puts(k.signed_url_s)
+              puts()
+            end
+          else 
+            if (!k.hashtags.include?('8bd49265-0798-442a-ba83-3ac5cabf6d38'))
+              new = k.hashtags
+              new += ["8bd49265-0798-442a-ba83-3ac5cabf6d38"]
+              Kernal.update(k.id, :hashtags => new)
+            end
           end
-        elsif (scores[0][0][1] > 0.98 )
-          @content = Mixtape.find('7efabc59-fab1-48b6-8aa0-c4ce76519db9').content
-          if (!@content.contains.include?(k.id))
-            new = @content.contains.append(k.id)
-            Content.update(@content.id, :contains => new)
-            puts(k.signed_url_s)
-            puts(scores[0][0][1])
-            puts()
-          end
-        elsif (scores[0][0][1] > 0.95 )
-          @content = Mixtape.find('082d00b6-199a-4a2d-8963-f2e0e48fe188').content
-          if (!@content.contains.include?(k.id))
-            new = @content.contains.append(k.id)
-            Content.update(@content.id, :contains => new)
-            puts(k.signed_url_s)
-            puts(scores[0][0][1])
-            puts()
-          end
-        elsif (scores[0][0][1] > 0.90 )
-          @content = Mixtape.find('e4c32460-1d0b-4762-b0e8-af0b5ab3d622').content
-          if (!@content.contains.include?(k.id))
-            new = @content.contains.append(k.id)
-            Content.update(@content.id, :contains => new)
-            puts(k.signed_url_s)
-            puts(scores[0][0][1])
-            puts()
-          end
-        elsif (scores[0][0][1] > 0.85 )
-          @content = Mixtape.find('7cac1137-c6a8-43b3-80fb-51f1482091c6').content
-          if (!@content.contains.include?(k.id))
-            new = @content.contains.append(k.id)
-            Content.update(@content.id, :contains => new)
-            puts(k.signed_url_s)
-            puts(scores[0][0][1])
-            puts()
-          end
-        elsif (scores[0][0][1] > 0.80 )
-          @content = Mixtape.find('96e63e0d-6bf4-48fe-a090-01f2fa8dd19f').content
-          if (!@content.contains.include?(k.id))
-            new = @content.contains.append(k.id)
-            Content.update(@content.id, :contains => new)
-            puts(k.signed_url_s)
-            puts(scores[0][0][1])
-            puts()
-          end
+        rescue
+          puts(src.name + " " + cur.to_s + " /" + cnt.to_s + " ERROR ERROR:skipping")
         end
-      rescue
-        puts("ERROR:skipping")
-      ensure 
-        cur = cur + 1
-        puts(cur.to_s + " /" + cnt.to_s)
       end
     end
   end

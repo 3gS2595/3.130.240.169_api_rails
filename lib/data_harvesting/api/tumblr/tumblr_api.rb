@@ -9,7 +9,7 @@ class TumblrApi
   def perform()
     catch :api_limit_reached do
       cnt_time_start = Time.now
-      @subsets = SrcUrlSubset.where(src_url_id:  SrcUrl.where(name: 'tumblr')[0].id)
+      @subsets = SrcUrlSubset.where(src_url_id:  SrcUrl.where(name: 'tumblr')[0].id).reject { |s| s.name == 'deactivated918273729' }
       @this_event = nil
       @page_size = 50
       @todo = []
@@ -46,7 +46,7 @@ class TumblrApi
             Event.where(origin: 'tumblr_updating_all')[0].delete
             @this_event = EventFactory.TumblrUpdatingAll(Thread.current.object_id.to_s)  
             @todo = @subsets.filter { |s| s.time_last_scraped_completely != nil }
-            print ( "\n" + 'TUMBLR UPDATE_ALL EVENT CREATED')
+            puts('TUMBLR UPDATE_ALL EVENT CREATED')
           end
         end 
         
@@ -54,12 +54,13 @@ class TumblrApi
         if !Event.exists?(origin: 'tumblr_updating_all')
           @this_event = EventFactory.TumblrUpdatingAll(Thread.current.object_id.to_s)  
           @todo = @subsets.filter { |s| s.time_last_scraped_completely != nil }
-          print ( "\n" + 'TUMBLR UPDATE_ALL EVENT CREATED')
+          puts('TUMBLR UPDATE_ALL EVENT CREATED')
         end
       end
 
       # cycles approved accounts
       cnt_requests = 0
+      cur_api_key = 0
       extractor = TumblrResponseExtract.new()
       @todo.each do | src_user |
         permissions = []
@@ -92,7 +93,7 @@ class TumblrApi
 
             # cycles api tokens if request limit reached 
             if json.dig('status') == 429
-              puts 'SWITCHING TUMBLR API KEY == 2'
+              cur_api_key = 1
               client = Tumblr::Client.new({
                 :consumer_key => Rails.application.credentials.tumblr[:consumer_key_1],
                 :consumer_secret => Rails.application.credentials.tumblr[:consumer_secret_1],
@@ -101,7 +102,7 @@ class TumblrApi
               })
               json =  JSON.parse(client.posts(src_user.url.split('/').last + '.tumblr.com', :limit => @page_size, :offset => cnt_post_offset, :notes_info => true, :reblog_info => true).to_json)
               if json.dig('status') == 429
-                puts 'SWITCHING TUMBLR API KEY == 3'
+                cur_api_key = 3
                 client = Tumblr::Client.new({
                   :consumer_key => Rails.application.credentials.tumblr[:consumer_key_2],
                   :consumer_secret => Rails.application.credentials.tumblr[:consumer_secret_2],
@@ -119,19 +120,18 @@ class TumblrApi
             # iterates through api response's posts
             # (api response debug print)
             cnt_total_posts = json.dig('blog', 'total_posts')
-            print ("\n" + '-- API REQUEST --tumblr-api-:' + '(' + cnt_requests.to_s + ') ' + (Time.at(Time.now - cnt_time_start).utc.strftime "%H:%M:%S") + " ") 
-            print (src_user.url.split('/').last + '---' + src_user.url + ' ' + cnt_post_offset.to_s + '/' + cnt_total_posts.to_s)
+            print ("\n" + '-- API --TUMBLR-key-' + cur_api_key.to_s + '(' + cnt_requests.to_s.rjust(4, ' ') + '@ ' + (Time.at(Time.now - cnt_time_start).utc.strftime "%H:%M:%S") + ")=-") 
+            print (src_user.url.split('/').last.ljust(20, '-')[0,20] + '-= ' + (cnt_post_offset.to_s + '/' + cnt_total_posts.to_s).ljust(8,' ') + '-=> ' + src_user.url )
             new_k = []
 
             json.dig('posts').each do |post|
               cnt_searched_posts = cnt_searched_posts + 1
-
-              # records most recent datetime/time_last_entry found
               time_posted = DateTime.parse(post.dig("date"))
+
+              # is up to date checks
               if time_posted > time_most_recent_scrape
                 time_most_recent_scrape = time_posted
-              # is up to date check
-              elsif time_posted < time_previous_last_found_post
+              elsif time_posted < time_previous_last_found_post || time_posted == time_previous_last_found_post
                 SrcUrlSubset.find(src_user.id).update(time_last_entry: time_most_recent_scrape)
                 src_user.content.contains.concat(new_k)
                 src_user.content.save
@@ -144,6 +144,10 @@ class TumblrApi
                 new_k.concat(extractor.extract(post, src_user, permissions, src_url_subset_assigned_id, time_posted))
               else
                 puts ('post exists')
+                if (cnt_searched_posts == 1) 
+                  SrcUrlSubset.find(src_user.id).update(time_last_entry: time_posted)
+                  print('updated recent post datetime')
+                end
               end
 
               # is complete check
@@ -176,6 +180,8 @@ class TumblrApi
       if @this_event != nil
         @this_event.delete
       end
+      # new line for sidekiq "done" print
+      puts()
     end
   end
 end

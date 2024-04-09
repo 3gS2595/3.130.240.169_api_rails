@@ -111,7 +111,7 @@ class TumblrResponseExtract
           signed_url_l: signed_url[index]
         )
         new_k << @link.id
-        print "\n" + @link.url 
+        print "\n" + "˪".rjust(39, ' ') + @link.url 
       end
     else
       @link = Kernal.create(

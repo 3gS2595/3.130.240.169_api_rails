@@ -14,29 +14,30 @@ class SrcUrlSubsetsController < ApplicationController
 
   # POST /src_url_subsets
   def create
-    @newContents = Content.create(
-      contains: []
-    )
-    @src_url_subset = SrcUrlSubset.create(
-      name: params[:name],
-      url: params[:url],
-      content_id: @newContents.id
-    )
-
+    if !SrcUrlSubset.exists?(url: params[:url])
+      @newContents = Content.create(
+        contains: []
+      )
+      @src_url_subset = SrcUrlSubset.create(
+        name: params[:name],
+        url: params[:url],
+        content_id: @newContents.id
+      )
+      if (params.has_key?(:src_url_id))
+        @src_url_subset.src_url_id = params[:src_url_id]
+      else
+        domain = /^(?:https?:\/\/)?(?:[^@\/\n]+@)?(?:www\.)?([^:\/?\n]+)/.match(params[:url])[1]
+        @src_url_subset.src_url_id = SrcUrl.where(url: domain).first.id
+      end
+    else
+      @src_url_subset = SrcUrlSubset.where(url: params[:url])
+    end
     new = current_user.permission.src_url_subsets
     new.push(@src_url_subset.id)
     current_user.permission.update(src_url_subsets: new)
     new = current_user.user_feed.feed_sources
     new.push(@src_url_subset.id)
     current_user.user_feed.update(feed_sources: new)
-
-    if (params.has_key?(:src_url_id))
-      @src_url_subset.src_url_id = params[:src_url_id]
-    else
-      domain = /^(?:https?:\/\/)?(?:[^@\/\n]+@)?(?:www\.)?([^:\/?\n]+)/.match(params[:url])[1]
-      @src_url_subset.src_url_id = SrcUrl.where(url: domain).first.id
-    end
-
     if @src_url_subset.save
       if (params[:url].include? "tumblr")
         Sidekiq.set_schedule(params[:name], { 'in' => ['2s'], 'class' => 'TumblrApi' })

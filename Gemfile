@@ -36,6 +36,7 @@ gem "nokogiri"
 
 # ActiveRecord
 gem 'kaminari'
+gem 'fast_page'
 gem 'ransack', :github => 'activerecord-hackery/ransack', :branch => 'main'
 
 # AWS

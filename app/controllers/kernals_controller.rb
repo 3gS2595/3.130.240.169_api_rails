@@ -17,9 +17,9 @@ class KernalsController < ApplicationController
       else 
         if(params[:src_url_subset_id] != "-1")
           # fetch specific src_url_subset's kernals 
-          @q = Kernal.where(id: SrcUrlSubset.find(params[:src_url_subset_id]).content.contains).order(time_posted: :desc)
+          @q = Kernal.where(src_url_subset_id: params[:src_url_subset_id]).order(time_posted: :desc)
         else
-          @q = Kernal.where(id: SrcUrlSubset.where(id: current_user.user_feed.feed_sources).joins(:content).pluck(:'contents.contains').flatten).order(time_posted: :desc)
+          @q = Kernal.where(src_url_subset_id: current_user.user_feed.feed_sources).order(time_posted: :desc)
         end
       end; nil
 
@@ -27,7 +27,7 @@ class KernalsController < ApplicationController
 
       # page, search, and presign media
       @q = params.has_key?(:q) ? @q.ransack(search_params).result : @q
-      @page = @q.page(params[:page]).per(@page_size)
+      @page = @q.page(params[:page]).per(@page_size).fast_page
       signer = Aws::Sigv4::Signer.new(
         service: "s3",
         access_key_id: Rails.application.credentials.aws[:access_key_id],
