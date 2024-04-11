@@ -4,6 +4,7 @@ class KernalsController < ApplicationController
   
   # GET
   def index
+    puts(params[:mixtape])
     if !params.has_key?(:forceGraph)
       if (!params.has_key?(:src_url_subset_id))
         if params.has_key?(:mixtape)
@@ -11,7 +12,11 @@ class KernalsController < ApplicationController
           @q = Kernal.order(time_posted: :desc).where(id: Mixtape.find(params[:mixtape]).content.contains)
         else
           # fetch kernals in any mixtape
-          @q = Kernal.order(time_posted: :desc).where(id: Mixtape.where(id: current_user.user_feed.feed_mixtape).joins(:content).pluck(:'contents.contains').flatten)
+          if params[:feed] == 'true'
+            @q = Kernal.order(time_posted: :desc).where(id: Mixtape.where(id: current_user.user_feed.feed_mixtape).joins(:content).pluck(:'contents.contains').flatten)
+          else
+            @q = Kernal.order(time_posted: :desc).where(id: Mixtape.where(id: current_user.permission.mixtapes).joins(:content).pluck(:'contents.contains').flatten)
+          end
         end
 
       else 
@@ -19,14 +24,23 @@ class KernalsController < ApplicationController
           # fetch specific src_url_subset's kernals 
           @q = Kernal.where(src_url_subset_id: params[:src_url_subset_id]).order(time_posted: :desc)
         else
-          @q = Kernal.where(src_url_subset_id: current_user.user_feed.feed_sources).order(time_posted: :desc)
+          if params[:feed] == 'true'
+            @q = Kernal.where(src_url_subset_id: current_user.user_feed.feed_sources).order(time_posted: :desc)
+          else
+            @q = Kernal.where(src_url_subset_id: current_user.permission.src_url_subsets).order(time_posted: :desc)
+          end
         end
       end; nil
 
       # search, paginates selected kernals
 
       # page, search, and presign media
-      @q = params.has_key?(:q) ? @q.ransack(search_params).result : @q
+      if params.has_key?(:tags)
+        @q = @q.ransack(search_tags_params).result
+      else
+        @q = params.has_key?(:q) ? @q.ransack(search_params).result : @q
+      end
+
       @page = @q.page(params[:page]).per(@page_size).fast_page
       signer = Aws::Sigv4::Signer.new(
         service: "s3",
@@ -76,6 +90,8 @@ class KernalsController < ApplicationController
         end
       end
       render json: @page
+
+    # FORCE GRAPH DATA GENERATION
     else
       # fetches forceGraph data
       if params.has_key?(:mixtape)
@@ -251,6 +267,11 @@ class KernalsController < ApplicationController
       end
       qkey =  qkey.chomp('_or_') + '_i_cont_any'
       default_params = {qkey => params[:q]}
+    end
+
+    def search_tags_params
+      qkey = 'hashtags_i_cont_any'
+      default_params = {qkey => params[:tags]}
     end
 
     # Use callbacks to share common setup or constraints between actions.

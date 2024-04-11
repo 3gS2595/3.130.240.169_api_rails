@@ -133,7 +133,7 @@ class TumblrResponseExtract
         signed_url_l: nil
       )
       new_k << @link.id
-      print "\n" + @link.url 
+      print "\n" + "˪".rjust(39, ' ') + @link.url 
     end         
     return new_k
   end  
