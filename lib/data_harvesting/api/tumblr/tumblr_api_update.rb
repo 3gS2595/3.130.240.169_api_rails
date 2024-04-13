@@ -3,40 +3,17 @@ require 'sidekiq-scheduler'
 require 'json'
 require 'event_factory'
 
-class TumblrApi  
+class TumblrApiUpdate 
   include Sidekiq::Job
 
   def perform()
     catch :api_limit_reached do
       cnt_time_start = Time.now
-      @subsets = SrcUrlSubset.where(src_url_id:  SrcUrl.where(name: 'tumblr')[0].id).reject { |s| s.name == 'deactivated918273729' }
+      @subsets = SrcUrlSubset.where(src_url_id:  SrcUrl.where(name: 'tumblr')[0].id).reject{ |s| s.name == 'deactivated918273729' }
       @this_event = nil
       @page_size = 50
       @todo = []
 
-      # initializing_tumblr_account event handling
-      @todoCheck = @subsets.filter { |s| s.time_last_scraped_completely == nil }
-      @todoCheck.each do |s|
-        puts 'checking' + s.url
-        puts (!Event.where(origin: 'initializing_tumblr_account').exists?(['updated_at >= ?', 10.minutes.ago]))
-        if @todo.empty? && !Event.where(origin: 'initializing_tumblr_account').exists?(['updated_at >= ?', (DateTime.now - ((10/60)/24))])
-          if !Event.exists?(info: s.url)
-            # if unrecognized account, creates new event
-            @this_event = EventFactory.TumblrInitializing(s.url, Thread.current.object_id.to_s)  
-            @todo << s
-            puts 'INITIALIZING: ' + s.url.split('/').last
-          else
-            # if incompleted initialization, updates event if stale
-            @this_event = Event.where(info: s.url)[0]
-            if (Time.now - @this_event.event_time.to_time) > @this_event.duration_limit
-              @this_event.update(status: 'resume', tid: Thread.current.object_id.to_s)
-              @todo << s
-              puts 'RESUMING INITIALIZATION: ' + s.url.split('/').last
-            end
-          end
-        end
-      end
-      
       # tumblr_update_all event handling
       if @todo.length == 0 
         # terminates if tumblr_update_all is in progress, if heartbeat is stale creates new event 
@@ -131,7 +108,7 @@ class TumblrApi
               # is up to date checks
               if time_posted > time_most_recent_scrape
                 time_most_recent_scrape = time_posted
-              elsif time_posted < time_previous_last_found_post || time_posted == time_previous_last_found_post
+              elsif ((time_posted < time_previous_last_found_post || time_posted == time_previous_last_found_post) && src_user.time_last_scraped_completely != nil)
                 SrcUrlSubset.find(src_user.id).update(time_last_entry: time_most_recent_scrape)
                 src_user.content.contains.concat(new_k)
                 src_user.content.save
@@ -143,7 +120,7 @@ class TumblrApi
               if !Kernal.exists?(src_url_subset_assigned_id: src_url_subset_assigned_id)
                 new_k.concat(extractor.extract(post, src_user, permissions, src_url_subset_assigned_id, time_posted))
               else
-                puts ('post exists')
+                puts ("˪".rjust(39, ' ') + ' post exists')
                 if (cnt_searched_posts == 1) 
                   SrcUrlSubset.find(src_user.id).update(time_last_entry: time_posted)
                   print('updated recent post datetime')
