@@ -9,7 +9,7 @@ class TumblrApiUpdate
   def perform()
     catch :api_limit_reached do
       cnt_time_start = Time.now
-      @subsets = SrcUrlSubset.where(src_url_id:  SrcUrl.where(name: 'tumblr')[0].id).reject{ |s| s.name == 'deactivated918273729' }
+      @subsets = SrcUrlSubset.where(src_url_id:  SrcUrl.where(name: 'tumblr')[0].id)
       @this_event = nil
       @page_size = 50
       @todo = []
@@ -101,54 +101,58 @@ class TumblrApiUpdate
             print (src_user.url.split('/').last.ljust(20, '-')[0,20] + '-= ' + (cnt_post_offset.to_s + '/' + cnt_total_posts.to_s).ljust(8,' ') + '-=> ' + src_user.url )
             new_k = []
 
-            json.dig('posts').each do |post|
-              cnt_searched_posts = cnt_searched_posts + 1
-              time_posted = DateTime.parse(post.dig("date"))
+            posts = json.dig('posts').to_a.map
+            if posts.any?
+              posts.each do |post|
 
-              # is up to date checks
-              if time_posted > time_most_recent_scrape
-                time_most_recent_scrape = time_posted
-              elsif ((time_posted < time_previous_last_found_post || time_posted == time_previous_last_found_post) && src_user.time_last_scraped_completely != nil)
-                SrcUrlSubset.find(src_user.id).update(time_last_entry: time_most_recent_scrape)
-                src_user.content.contains.concat(new_k)
-                src_user.content.save
-                throw :cycle_posts
-              end 
+                cnt_searched_posts = cnt_searched_posts + 1
+                time_posted = DateTime.parse(post.dig("date"))
 
-              # creates post kernals for all media found
-              src_url_subset_assigned_id = post.dig("id")
-              if !Kernal.exists?(src_url_subset_assigned_id: src_url_subset_assigned_id)
-                new_k.concat(extractor.extract(post, src_user, permissions, src_url_subset_assigned_id, time_posted))
-              else
-                puts ("˪".rjust(39, ' ') + ' post exists')
-                if (cnt_searched_posts == 1) 
-                  SrcUrlSubset.find(src_user.id).update(time_last_entry: time_posted)
-                  print('updated recent post datetime')
+                # is up to date checks
+                if time_posted > time_most_recent_scrape
+                  time_most_recent_scrape = time_posted
+                elsif ((time_posted < time_previous_last_found_post || time_posted == time_previous_last_found_post) && src_user.time_last_scraped_completely != nil)
+                  SrcUrlSubset.find(src_user.id).update(time_last_entry: time_most_recent_scrape)
+                  src_user.content.contains.concat(new_k)
+                  src_user.content.save
+                  throw :cycle_posts
+                end 
+
+                # creates post kernals for all media found
+                src_url_subset_assigned_id = post.dig("id")
+                if !Kernal.exists?(src_url_subset_assigned_id: src_url_subset_assigned_id)
+                  new_k.concat(extractor.extract(post, src_user, permissions, src_url_subset_assigned_id, time_posted))
+                else
+                  puts ("˪".rjust(39, ' ') + ' post exists')
+                  if (cnt_searched_posts == 1) 
+                    SrcUrlSubset.find(src_user.id).update(time_last_entry: time_posted)
+                    print('updated recent post datetime')
+                  end
+                end
+
+                # is complete check
+                if cnt_searched_posts == cnt_total_posts || (json.dig('posts').length < @page_size && json.dig('posts').last == post)
+                  SrcUrlSubset.find(src_user.id).update(time_last_scraped_completely: DateTime.now(), time_last_entry: time_most_recent_scrape)
+                  Event.where(info: src_user.url).delete_all
+                  print ("\n" + 'INITIALIZED ' + src_user.name)
                 end
               end
-
-              # is complete check
-              if cnt_searched_posts == cnt_total_posts || (json.dig('posts').length < @page_size && json.dig('posts').last == post)
-                SrcUrlSubset.find(src_user.id).update(time_last_scraped_completely: DateTime.now(), time_last_entry: time_most_recent_scrape)
-                Event.where(info: src_user.url).delete_all
-                print ("\n" + 'INITIALIZED ' + src_user.name)
+              src_user.content.contains.concat(new_k)
+              src_user.content.save
+              # updates event heartbeats 
+              cnt_post_offset = cnt_post_offset + @page_size
+              if @this_event.origin == 'initializing_tumblr_account'
+                @this_event.update(
+                  busy_objects: cnt_post_offset,
+                  status: 'in progress',
+                  event_time: DateTime.now()
+                )
+              elsif @this_event.origin == 'tumblr_updating_all'
+                @this_event.update(
+                  event_time: DateTime.now(), 
+                  status: 'in progress'
+                )
               end
-            end
-            src_user.content.contains.concat(new_k)
-            src_user.content.save
-            # updates event heartbeats 
-            cnt_post_offset = cnt_post_offset + @page_size
-            if @this_event.origin == 'initializing_tumblr_account'
-              @this_event.update(
-                busy_objects: cnt_post_offset,
-                status: 'in progress',
-                event_time: DateTime.now()
-              )
-            elsif @this_event.origin == 'tumblr_updating_all'
-              @this_event.update(
-                event_time: DateTime.now(), 
-                status: 'in progress'
-              )
             end
           end
         end

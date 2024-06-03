@@ -13,9 +13,9 @@ require './config/environment/'
   feed_sources: []
 )
 @user = User.create(
-  email: "user", 
-  password: "123", 
-  password_confirmation: "123",
+  email: "temp", 
+  password: "temp", 
+  password_confirmation: "temp",
   permission_id: @permission.id, 
   user_feed_id: @user_feed.id
 )

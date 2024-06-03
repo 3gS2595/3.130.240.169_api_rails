@@ -1,10 +1,10 @@
 class KernalsController < ApplicationController
   before_action :authenticate_user!
   require "selenium-webdriver"
+  include S3Signer
   
   # GET
   def index
-    puts(params[:mixtape])
     if !params.has_key?(:forceGraph)
       if (!params.has_key?(:src_url_subset_id))
         if params.has_key?(:mixtape)
@@ -18,7 +18,6 @@ class KernalsController < ApplicationController
             @q = Kernal.order(time_posted: :desc).where(id: Mixtape.where(id: current_user.permission.mixtapes).joins(:content).pluck(:'contents.contains').flatten)
           end
         end
-
       else 
         if(params[:src_url_subset_id] != "-1")
           # fetch specific src_url_subset's kernals 
@@ -32,63 +31,13 @@ class KernalsController < ApplicationController
         end
       end; nil
 
-      # search, paginates selected kernals
-
       # page, search, and presign media
       if params.has_key?(:tags)
-        @q = @q.ransack(search_tags_params).result
-      else
-        @q = params.has_key?(:q) ? @q.ransack(search_params).result : @q
+        @q = @q.where(label: 'iconography')
       end
-
+      @q = params.has_key?(:q) ? @q.ransack(search_params).result : @q
       @page = @q.page(params[:page]).per(@page_size).fast_page
-      signer = Aws::Sigv4::Signer.new(
-        service: "s3",
-        access_key_id: Rails.application.credentials.aws[:access_key_id],
-        secret_access_key: Rails.application.credentials.aws[:secret_access_key],
-        region: 'us-east-1'
-      )
-      @page.each do |kernal|
-        if !kernal.file_path.nil? && kernal.file_path.length > 0  && kernal.signed_url.nil?
-          key = kernal.file_path
-          nailKey = kernal.file_path
-
-          if kernal.file_type == ".pdf"
-            key = kernal.id + ".pdf"
-            nailKey = kernal.id + ".avif"
-          end
-          kernal.assign_attributes({ 
-            :signed_url => 
-              signer.presign_url(
-                http_method: "GET",
-                url: "https://crystal-hair.nyc3.digitaloceanspaces.com/#{key}",
-                expires_in: 600,
-                body_digest: "UNSIGNED-PAYLOAD"
-              ),
-            :signed_url_s => 
-              signer.presign_url(
-                http_method: "GET",
-                url: "https://crystal-hair-s.nyc3.digitaloceanspaces.com/s_160_#{nailKey}",
-                expires_in: 600,
-                body_digest: "UNSIGNED-PAYLOAD"
-              ), 
-            :signed_url_m => 
-              signer.presign_url(
-                http_method: "GET",
-                url: "https://crystal-hair-m.nyc3.digitaloceanspaces.com/m_400_#{nailKey}",
-                expires_in: 600,
-                body_digest: "UNSIGNED-PAYLOAD"
-              ),
-            :signed_url_l => 
-              signer.presign_url(
-                http_method: "GET",
-                url: "https://crystal-hair-l.nyc3.digitaloceanspaces.com/l_1000_#{nailKey}",
-                expires_in: 600,
-                body_digest: "UNSIGNED-PAYLOAD"
-              )
-          })      
-        end
-      end
+      @page = s3_signer_batch(@page) 
       render json: @page
 
     # FORCE GRAPH DATA GENERATION
@@ -163,7 +112,6 @@ class KernalsController < ApplicationController
       Content.update(@content.id, :contains => new)
     end
     if params.has_key?(:url) 
-      puts(params[:url])
       options = Selenium::WebDriver::Firefox::Options.new(args: ['-headless'])
       driver = Selenium::WebDriver.for(:firefox, options: options) 
       driver.manage.window.resize_to(1080, 1080)
@@ -179,51 +127,7 @@ class KernalsController < ApplicationController
     @kernal.save
 
     # presign urls
-    if !@kernal.file_path.nil? && @kernal.file_path.length > 0
-      key = @kernal.file_path
-      nailKey = @kernal.file_path
-      if @kernal.file_type == ".pdf"
-        key = @kernal.id + ".pdf"
-        nailKey = @kernal.id + ".avif"
-      end
-
-      signer = Aws::Sigv4::Signer.new(
-        service: "s3",
-        access_key_id: Rails.application.credentials.aws[:access_key_id],
-        secret_access_key: Rails.application.credentials.aws[:secret_access_key],
-        region: 'us-east-1'
-      )
-      @kernal.assign_attributes({ 
-        :signed_url => 
-          signer.presign_url(
-            http_method: "GET",
-            url: "https://crystal-hair.nyc3.digitaloceanspaces.com/#{key}",
-            expires_in: 600,
-            body_digest: "UNSIGNED-PAYLOAD"
-          ),
-        :signed_url_s => 
-          signer.presign_url(
-            http_method: "GET",
-            url: "https://crystal-hair-s.nyc3.digitaloceanspaces.com/s_160_#{nailKey}",
-            expires_in: 600,
-            body_digest: "UNSIGNED-PAYLOAD"
-          ), 
-        :signed_url_m => 
-          signer.presign_url(
-            http_method: "GET",
-            url: "https://crystal-hair-m.nyc3.digitaloceanspaces.com/m_400_#{nailKey}",
-            expires_in: 600,
-            body_digest: "UNSIGNED-PAYLOAD"
-          ),
-        :signed_url_l => 
-          signer.presign_url(
-            http_method: "GET",
-            url: "https://crystal-hair-l.nyc3.digitaloceanspaces.com/l_1000_#{nailKey}",
-            expires_in: 600,
-            body_digest: "UNSIGNED-PAYLOAD"
-          )
-      })    
-    end
+    @kernal = s3_signer_single(@kernal)
     render json: @kernal, status: :created, location: @kernal
   end
 

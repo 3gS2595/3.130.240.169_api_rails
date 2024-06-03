@@ -40,7 +40,7 @@ class SrcUrlSubsetsController < ApplicationController
     current_user.user_feed.update(feed_sources: new)
     if @src_url_subset.save
       if (params[:url].include? "tumblr")
-        Sidekiq.set_schedule(params[:name], { 'in' => ['2s'], 'class' => 'TumblrApi' })
+        Sidekiq.set_schedule(params[:name], { 'in' => ['2s'], 'class' => 'TumblrApiInit' })
       end
       render json: @src_url_subset, status: :created, location: @src_url_subset
     else
@@ -59,14 +59,10 @@ class SrcUrlSubsetsController < ApplicationController
 
   # DELETE /src_url_subsets/1
   def destroy
-    mixedKernals = []
-    Mixtape.all.each do |mix|
-      mixedKernals.concat(mix.content)
-    end
-
-    unused = Kernal.where.not(id: mixedKernals)
-    unused.where(src_url_subset_id:  @src_url_subset.id).delete_all
-    @src_url_subset.destroy
+    new = user.permission.src_url_subsets
+    new.delete()
+    new.delete(@src_url_subset.id)
+    user.permission.update(src_url_subsets: new)
   end
 
   private

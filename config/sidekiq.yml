@@ -2,8 +2,8 @@
   :dynamic: true
   :schedule:
     tumblr_api_init:
-      every: ['15m', first_in: '1s']
+      every: ['20m', first_in: '1s']
       class: TumblrApiInit 
     tumblr_api_Update:
-      every: ['10m', first_in: '5m']
+      every: ['10m', first_in: '1s']
       class: TumblrApiUpdate
