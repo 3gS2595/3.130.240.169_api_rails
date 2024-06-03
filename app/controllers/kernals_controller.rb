@@ -2,7 +2,9 @@ class KernalsController < ApplicationController
   before_action :authenticate_user!
   require "selenium-webdriver"
   include S3Signer
+  include S3SeleniumSnap
   
+
   # GET
   def index
     if !params.has_key?(:forceGraph)
@@ -30,7 +32,6 @@ class KernalsController < ApplicationController
           end
         end
       end; nil
-
       # page, search, and presign media
       if params.has_key?(:tags)
         @q = @q.where(label: 'iconography')
@@ -39,6 +40,7 @@ class KernalsController < ApplicationController
       @page = @q.page(params[:page]).per(@page_size).fast_page
       @page = s3_signer_batch(@page) 
       render json: @page
+
 
     # FORCE GRAPH DATA GENERATION
     else
@@ -68,24 +70,18 @@ class KernalsController < ApplicationController
       render json: ret
     end; nil
   end
-
-  # GET
-  def show
-    @kernal = Kernal.find(params[:id])
-    render json: @kernal
-  end
+ 
 
   # POST /kernals
   def create
     uuid = SecureRandom.uuid
     @kernal = Kernal.new(
+      id: uuid,
       file_path: uuid + params[:file_type],
       file_type: params[:file_type],
       time_posted: DateTime.now(),
       permissions: [current_user.id]
     )
-    @kernal.id = uuid
-    @kernal.save
     if (params.has_key?(:image))
       File.open(params[:image]) do |file| 
         if (params[:image].original_filename.include?("gif"))
@@ -99,9 +95,8 @@ class KernalsController < ApplicationController
     end
     if (params.has_key?(:pdf))
       uploader = PdfUploader.new(@kernal)
+      uploader.store!(File.open(params[:pdf])) 
       @kernal.update_attribute(:file_type, ".pdf")
-      File.open(params[:pdf]) do |file| 
-        uploader.store!(file) end
     end
     if (params.has_key?(:text))
       @kernal.update_attribute(:description, params[:text])
@@ -112,24 +107,14 @@ class KernalsController < ApplicationController
       Content.update(@content.id, :contains => new)
     end
     if params.has_key?(:url) 
-      options = Selenium::WebDriver::Firefox::Options.new(args: ['-headless'])
-      driver = Selenium::WebDriver.for(:firefox, options: options) 
-      driver.manage.window.resize_to(1080, 1080)
-      driver.navigate.to params[:url]
-      sleep(3) 
-      @kernal.update_attribute(:url, params[:url])
-      driver.save_screenshot("selenium.png")
-      driver.quit
-      file = File.open("./selenium.png")
-      uploader = ImageUploader.new(@kernal)
-      uploader.store!(file)
+      @kernal = s3_selenium_snapshot(@kernal, params[:url])
     end
+    # save / presign ret url
     @kernal.save
-
-    # presign urls
     @kernal = s3_signer_single(@kernal)
     render json: @kernal, status: :created, location: @kernal
   end
+
 
   # PATCH/PUT
   def update
@@ -140,6 +125,7 @@ class KernalsController < ApplicationController
       render json: @kernal.errors, status: :unprocessable_entity
     end
   end
+
 
   # DELETE
   def destroy
@@ -161,6 +147,7 @@ class KernalsController < ApplicationController
     @kernal.destroy
   end
 
+
   private
     def search_params
       qkey = ''
@@ -172,17 +159,14 @@ class KernalsController < ApplicationController
       qkey =  qkey.chomp('_or_') + '_i_cont_any'
       default_params = {qkey => params[:q]}
     end
-
     def search_tags_params
       qkey = 'hashtags_i_cont_any'
       default_params = {qkey => params[:tags]}
     end
-
     # Use callbacks to share common setup or constraints between actions.
     def set_kernal
       @kernal = Kernal.find(params[:id])
     end
-
     # Only allow a list of trusted parameters through.
     def kernal_params
       params.permit(

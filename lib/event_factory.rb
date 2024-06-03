@@ -18,7 +18,6 @@ class EventFactory
   def self.TumblrInitializing (new_s_url, tid)
     puts (new_s_url)
     if (new_s_url == 'https://www.tumblr.com/xvisualtreasure09x')
-      puts('MATCHING')
       @event = Event.create(
         tid: tid,
         event_time: DateTime.now(),

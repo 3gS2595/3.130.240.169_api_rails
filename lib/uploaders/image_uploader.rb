@@ -11,7 +11,6 @@ class ImageUploader < CarrierWave::Uploader::Base
     self.aws_bucket = "crystal-hair-s"
     process :convert => 'avif'
     process resize_to_fit: [160,160]
-    puts 'done'
   end
   version :m_400 do
     self.aws_bucket = "crystal-hair-m"
